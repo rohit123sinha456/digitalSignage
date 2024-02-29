@@ -1,5 +1,14 @@
 ## Architecture :-
 
+API
+1. Create User - Returns User ID
+2. Login User and get JWT Token
+3. CRUD Images and Playlist
+
+
+
+
+
 [OPTIONAL]
 In My domain ( digitalsignage.com/api/v1/configs ) will return the IP of the rabbit MQ and other server specific config option
 
@@ -20,6 +29,7 @@ lets say the whole screen is identified as block B0, in a split screen scenario 
 
 
 DataBases :-
+Screen_Block_Type - It Stores block name ( B0,B1 etc ) and the aspect ratio of each block type .
 Users - To store user information ( along with a unique user ID)
 Images - A Database to store Image Metadata ( User Id, Image link, upload date and so on)
 Playlists :- A collection of collection ( one collection for each user )
@@ -34,6 +44,7 @@ For Storing Single Image ( Only one image will be displayed on the screen)
     block :- B0 # Block B0 means whole screen
     images :- [
         {
+            type :- Image/Video/GIF
             image:- Image_link,
             display_time :- -1
         }
@@ -50,10 +61,12 @@ This is for playlist to be shown on the whole screen
     block :- B0 # Block B0 means whole screen
     images :- [
         {
+            type :- Image/Video/GIF
             image:- Image_link,
             display_time :- 10 sec
         },
-                {
+        {
+            type :- Image/Video/GIF
             image:- Image_link,
             display_time :- 20 sec
         },
@@ -72,10 +85,12 @@ This means B1 will have a playlist and B2 will have a static image
         block :- B1,
         images :- [
             {
+                type :- Image/Video/GIF
                 image:- Image_link,
                 display_time :- 10 sec
             },
-                    {
+            {
+                type :- Image/Video/GIF
                 image:- Image_link,
                 display_time :- 20 sec
             },
@@ -86,6 +101,7 @@ This means B1 will have a playlist and B2 will have a static image
         block :- B2,
         images :- [
             {
+                type :- Image/Video/GIF
                 image:- Image_link,
                 display_time :- -1
             }
