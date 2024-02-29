@@ -1,0 +1,35 @@
+services:
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    networks:
+      - back-tier
+
+  minio:
+    image: minio/minio:latest
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      - MINIO_ROOT_USER=ROOTUSER
+      - MINIO_ROOT_PASSWORD=CHANGEME123
+    volumes:
+      - ./minio/data:/data
+    networks:
+      - back-tier
+    command: server --console-address ":9001" /data
+
+  mongo:
+    image: mongodb/mongodb-community-server:latest
+    ports:
+      - "27017:27017"
+    volumes:
+      - ./db/data:/data/db 
+    networks:
+      - back-tier
+
+
+networks:
+  back-tier: {}
