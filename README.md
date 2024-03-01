@@ -27,6 +27,8 @@ Image will be stored in an Object Store ( minio or AWS S3) and the public link o
 Block Type in Screen :-
 lets say the whole screen is identified as block B0, in a split screen scenario one screen is identified as B1 and the other as B2 for three splits it can be B1 and B2TOP and B2BOTTOM
 
+User to Device Mapping :-
+Each client can have multiple devices connected. Each device will have a unique ID and each device can show different things
 
 DataBases :-
 Screen_Block_Type - It Stores block name ( B0,B1 etc ) and the aspect ratio of each block type .
@@ -40,6 +42,7 @@ For Storing Single Image ( Only one image will be displayed on the screen)
 {
     id :- Unique_ID
     type :- Single
+    device_id :- device_id
     display_block :- {[
     block :- B0 # Block B0 means whole screen
     images :- [
@@ -57,6 +60,7 @@ This is for playlist to be shown on the whole screen
 {
     id :- unique_Id
     type :- multiple
+    device_id :- device_id
     display_block :- {[
     block :- B0 # Block B0 means whole screen
     images :- [
@@ -80,6 +84,7 @@ This means B1 will have a playlist and B2 will have a static image
 {
     id :- unique_Id
     type :- multiple
+    device_id :- device_id
     display_block :- {
     [
         block :- B1,
