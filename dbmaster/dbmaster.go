@@ -2,9 +2,12 @@ package dbmaster
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"log"
 
-	"github.com/google/uuid"
+	DataModel "github.com/rohit123sinha456/digitalSignage/model"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -26,20 +29,36 @@ func ConnectDB() *mongo.Client {
 	return client
 }
 
-func CreateUser(client *mongo.Client, username string) {
+func CreateUser(client *mongo.Client, newUser DataModel.User) string {
 	if client == nil {
 		log.Printf("Client is Null")
 	}
 	coll := client.Database("user").Collection("userData")
-	userID = uuid.NewString()
-	newUser := userModel.User{Name: username, UserID: userID}
+	// userID := uuid.NewString()
+	// newUser := DataModel.User{Name: username, UserID: userID}
 	_, err := coll.InsertOne(context.TODO(), newUser)
 	if err != nil {
 		panic(err)
 	}
 	log.Printf("Created User")
-	userdatabase := client.database(userID)
-	if userdatabase.Name() != nil {
-		log.Printf(userdatabase.Name())
+
+	return newUser.UserID
+}
+
+func GetUser(client *mongo.Client, userId string) {
+	var result DataModel.User
+	coll := client.Database("user").Collection("userData")
+	filter := bson.D{{"user_id", userId}}
+	err := coll.FindOne(context.TODO(), filter).Decode(&result)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return
+		}
+		panic(err)
 	}
+	output, err := json.MarshalIndent(result, "", "    ")
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("%s\n", output)
 }
