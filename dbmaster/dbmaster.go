@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/rohit123sinha456/digitalSignage/common"
 	DataModel "github.com/rohit123sinha456/digitalSignage/model"
+	"github.com/rohit123sinha456/digitalSignage/rabbitqueue"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -29,23 +31,43 @@ func ConnectDB() *mongo.Client {
 	return client
 }
 
-func CreateUser(client *mongo.Client, newUser DataModel.User) string {
-	if client == nil {
-		log.Printf("Client is Null")
-	}
+func CreateUser(client *mongo.Client, newUser DataModel.User) error {
+	userID := newUser.UserID
 	coll := client.Database("user").Collection("userData")
-	// userID := uuid.NewString()
-	// newUser := DataModel.User{Name: username, UserID: userID}
 	_, err := coll.InsertOne(context.TODO(), newUser)
 	if err != nil {
-		panic(err)
+		return err
 	}
-	log.Printf("Created User")
 
-	return newUser.UserID
+	uservhostname := common.CreatevHostName(userID)
+	userdsystemname := common.ExtractUserSystemIdentifier(userID)
+	err = rabbitqueue.SetupUserandvHost(userdsystemname, uservhostname)
+	log.Printf("Created User")
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func GetUser(client *mongo.Client, userId string) {
+	var result DataModel.User
+	coll := client.Database("user").Collection("userData")
+	filter := bson.D{{"user_id", userId}}
+	err := coll.FindOne(context.TODO(), filter).Decode(&result)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return
+		}
+		panic(err)
+	}
+	output, err := json.MarshalIndent(result, "", "    ")
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("%s\n", output)
+}
+
+func AddUserDevice(client *mongo.Client, userId string) {
 	var result DataModel.User
 	coll := client.Database("user").Collection("userData")
 	filter := bson.D{{"user_id", userId}}

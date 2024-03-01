@@ -20,7 +20,7 @@ require (
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/montanaflynn/stats v0.0.0-20171201202039-1bf9dbcd8cbe // indirect
-	github.com/rabbitmq/amqp091-go v1.7.0 // indirect
+	github.com/rabbitmq/amqp091-go v1.9.0 // indirect
 	// github.com/rohit123sinha456/digitalSignage/dbmaster v0.0.0-00010101000000-000000000000 // indirect
 	github.com/rs/xid v1.5.0 // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect
