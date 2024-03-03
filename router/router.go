@@ -1,6 +1,7 @@
 package router
 
 import (
+	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -15,6 +16,11 @@ import (
 var Client *mongo.Client
 var ObjectStoreClient *minio.Client
 var R *gin.Engine
+
+type Requestjson struct {
+	Userid  string             `bson:"userid"`
+	Devices []DataModel.Device `bson:"devices"`
+}
 
 func SetupRouter() {
 	R = gin.Default()
@@ -55,4 +61,27 @@ func UserRouter() {
 			c.JSON(http.StatusBadRequest, gin.H{"status": "Request is not in proper format"})
 		}
 	})
+}
+
+func DeviceRouter() {
+	R.POST("/device", func(c *gin.Context) {
+		var requestjsonvar Requestjson
+		reqerr := c.Bind(&requestjsonvar)
+		log.Printf("%+v", requestjsonvar)
+		if reqerr != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"status": reqerr.Error()})
+		}
+		userID, err := dbmaster.CreateDevice(c, Client, requestjsonvar.Userid, requestjsonvar.Devices)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"status": err.Error()})
+		}
+		user, err := dbmaster.GetUser(Client, userID)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"status": err.Error()})
+		} else {
+			c.JSON(http.StatusOK, gin.H{"user": user})
+		}
+
+	})
+
 }

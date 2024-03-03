@@ -15,6 +15,6 @@ type UserSystemIdentifeir struct {
 }
 
 type Device struct {
-	DID  string `bson:"name,omitempty"`
-	Name string `bson:"name,omitempty"`
+	DID  string `bson:"deviceid,omitempty"`
+	Name string `bson:"devicename,omitempty"`
 }
