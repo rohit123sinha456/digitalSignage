@@ -17,3 +17,11 @@ func CreatevHostName(userID string) string {
 	return userdBname
 
 }
+
+//bucket name for minio
+func CreateBucketName(userID string) string {
+	useridsplits := strings.Split(userID, "-")
+	userdBname := strings.Join([]string{"dsu", "bucket", useridsplits[0]}, "")
+	return userdBname
+
+}

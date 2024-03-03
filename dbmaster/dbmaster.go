@@ -6,8 +6,11 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/google/uuid"
+	"github.com/minio/minio-go/v7"
 	"github.com/rohit123sinha456/digitalSignage/common"
 	DataModel "github.com/rohit123sinha456/digitalSignage/model"
+	"github.com/rohit123sinha456/digitalSignage/objectstore"
 	"github.com/rohit123sinha456/digitalSignage/rabbitqueue"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -31,40 +34,79 @@ func ConnectDB() *mongo.Client {
 	return client
 }
 
-func CreateUser(client *mongo.Client, newUser DataModel.User) error {
+func CreateUserSystemInfo(ctx context.Context, client *mongo.Client, newUser DataModel.User) error {
+	var usersystemidentifier DataModel.UserSystemIdentifeir
 	userID := newUser.UserID
-	coll := client.Database("user").Collection("userData")
-	_, err := coll.InsertOne(context.TODO(), newUser)
-	if err != nil {
-		return err
-	}
+	usersystemidentifier.UserID = userID
+	usersystemidentifier.UserQueuevHostID = common.CreatevHostName(userID)
+	usersystemidentifier.UserSystemID = common.ExtractUserSystemIdentifier(userID)
+	usersystemidentifier.UserQueueID = common.ExtractUserSystemIdentifier(userID)
+	usersystemidentifier.UserBucketID = common.CreateBucketName(userID)
 
-	uservhostname := common.CreatevHostName(userID)
-	userdsystemname := common.ExtractUserSystemIdentifier(userID)
-	err = rabbitqueue.SetupUserandvHost(userdsystemname, uservhostname)
-	log.Printf("Created User")
+	collection := client.Database("user").Collection("userSystemInfo")
+	_, err := collection.InsertOne(ctx, usersystemidentifier)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func GetUser(client *mongo.Client, userId string) {
+// Create a transactional atomic property that if half way through the systen fails, all the previous operations
+// gets reverted. i.e if record entered in db and bucket creaed but rabbitmq failed, the users needs tto be deleted
+// from the DB and the bucket needs to be detected as well
+func CreateUser(ctx context.Context, client *mongo.Client, objectStoreClient *minio.Client, newUser DataModel.User) error {
+	userID := uuid.NewString()
+	newUser.UserID = userID
+	coll := client.Database("user").Collection("userData")
+	_, err := coll.InsertOne(ctx, newUser)
+	if err != nil {
+		return err
+	}
+	log.Printf("User Successfully inserted in Database")
+	uservhostname := common.CreatevHostName(userID)
+	userdsystemname := common.ExtractUserSystemIdentifier(userID)
+	userbucketname := common.CreateBucketName(userID)
+
+	obserror := objectstore.CreateBucket(ctx, objectStoreClient, userbucketname)
+	err = rabbitqueue.SetupUserandvHost(userdsystemname, uservhostname)
+	metainfoerr := CreateUserSystemInfo(ctx, client, newUser)
+	log.Printf("Created User")
+	if err != nil {
+		return err
+	} else if obserror != nil {
+		return obserror
+	} else if metainfoerr != nil {
+		return metainfoerr
+	} else {
+		return nil
+	}
+}
+
+// Modify the function so that base on the string length, it uses fileds of systemID, vHostID and so on from userSystemInfo
+// fetch the userID and then fetch the result from userData
+func GetUser(client *mongo.Client, userId string) (DataModel.User, error) {
 	var result DataModel.User
 	coll := client.Database("user").Collection("userData")
-	filter := bson.D{{"user_id", userId}}
+	filter := bson.D{{"userid", userId}}
 	err := coll.FindOne(context.TODO(), filter).Decode(&result)
 	if err != nil {
-		if err == mongo.ErrNoDocuments {
-			return
-		}
-		panic(err)
+		return result, err
 	}
-	output, err := json.MarshalIndent(result, "", "    ")
+	return result, nil
+}
+
+func GetAllUser(client *mongo.Client) ([]DataModel.User, error) {
+	var results []DataModel.User
+	coll := client.Database("user").Collection("userData")
+	filter := bson.D{}
+	cursor, err := coll.Find(context.TODO(), filter)
 	if err != nil {
-		panic(err)
+		return results, err
 	}
-	fmt.Printf("%s\n", output)
+	if err = cursor.All(context.TODO(), &results); err != nil {
+		return results, err
+	}
+	return results, nil
 }
 
 func AddUserDevice(client *mongo.Client, userId string) {

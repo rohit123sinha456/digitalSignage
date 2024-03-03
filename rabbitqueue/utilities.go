@@ -107,13 +107,5 @@ func SetupUserandvHost(username string, vhostname string) error {
 	if err != nil {
 		return err
 	}
-	// err = CreateQueue(vhostname)
-	// if err != nil {
-	// 	return err
-	// }
-	// err = BindExchangeandQueue(vhostname)
-	// if err != nil {
-	// 	return err
-	// }
 	return nil
 }
