@@ -3,8 +3,10 @@ package dbmaster
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
+	"reflect"
 
 	"github.com/google/uuid"
 	"github.com/minio/minio-go/v7"
@@ -51,11 +53,28 @@ func CreateUserSystemInfo(ctx context.Context, client *mongo.Client, newUser Dat
 	return nil
 }
 
+func GetUserSystemInfo(ctx context.Context, client *mongo.Client, userId string) (DataModel.UserSystemIdentifeir, error) {
+	var result DataModel.UserSystemIdentifeir
+	coll := client.Database("user").Collection("userSystemInfo")
+	usersystemid := common.ExtractUserSystemIdentifier(userId)
+	filter := bson.D{{"usersystemid", usersystemid}}
+	err := coll.FindOne(ctx, filter).Decode(&result)
+	if err != nil {
+		return result, err
+	}
+	return result, nil
+}
+
 // Create a transactional atomic property that if half way through the systen fails, all the previous operations
 // gets reverted. i.e if record entered in db and bucket creaed but rabbitmq failed, the users needs tto be deleted
 // from the DB and the bucket needs to be detected as well
 func CreateUser(ctx context.Context, client *mongo.Client, objectStoreClient *minio.Client, newUser DataModel.User) error {
 	userID := uuid.NewString()
+	doesUserExists, _ := GetUser(client, userID)
+	doesUserSystemInfoExists, _ := GetUserSystemInfo(ctx, client, userID)
+	if reflect.ValueOf(doesUserExists).IsZero() != true || reflect.ValueOf(doesUserSystemInfoExists).IsZero() != true {
+		return errors.New(" Generated UserId Already Exists, Please try again")
+	}
 	newUser.UserID = userID
 	coll := client.Database("user").Collection("userData")
 	_, err := coll.InsertOne(ctx, newUser)
@@ -68,11 +87,11 @@ func CreateUser(ctx context.Context, client *mongo.Client, objectStoreClient *mi
 	userbucketname := common.CreateBucketName(userID)
 
 	obserror := objectstore.CreateBucket(ctx, objectStoreClient, userbucketname)
-	err = rabbitqueue.SetupUserandvHost(userdsystemname, uservhostname)
+	queueerr := rabbitqueue.SetupUserandvHost(userdsystemname, uservhostname)
 	metainfoerr := CreateUserSystemInfo(ctx, client, newUser)
 	log.Printf("Created User")
-	if err != nil {
-		return err
+	if queueerr != nil {
+		return queueerr
 	} else if obserror != nil {
 		return obserror
 	} else if metainfoerr != nil {

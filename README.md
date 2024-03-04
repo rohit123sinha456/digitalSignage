@@ -6,9 +6,6 @@ API
 3. CRUD Images and Playlist
 
 
-
-
-
 [OPTIONAL]
 In My domain ( digitalsignage.com/api/v1/configs ) will return the IP of the rabbit MQ and other server specific config option
 

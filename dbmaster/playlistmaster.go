@@ -2,7 +2,9 @@ package dbmaster
 
 import (
 	"context"
+	"errors"
 	"log"
+	"reflect"
 
 	"github.com/google/uuid"
 	"github.com/rohit123sinha456/digitalSignage/common"
@@ -49,6 +51,9 @@ func PlayPlaylist(ctx context.Context, client *mongo.Client, userID string, play
 	uservHostname := common.CreatevHostName(userID)
 	userdsystemname := common.ExtractUserSystemIdentifier(userID)
 	playlist, err := GetPlaylist(ctx, client, userID, playlistid)
+	if reflect.ValueOf(playlist).IsZero() == true {
+		return errors.New(" Requested Playlist Doesnt Exists. Please check User ID and Playlist ID Mapping")
+	}
 	rabbitqueue.Connect(userdsystemname, "password", uservHostname)
 	err = rabbitqueue.PublishMessage(ctx, playlist, uservHostname)
 	if err != nil {
