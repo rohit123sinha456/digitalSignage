@@ -7,6 +7,13 @@ const (
 	Multiple
 )
 
+type PlaylistActionType int
+
+const (
+	Stop PlaylistActionType = iota
+	Play
+)
+
 type ImageBlock struct {
 	Imagetype   string `bson:"imagetype,omitempty"`
 	Image       string `bson:"image,omitempty"`

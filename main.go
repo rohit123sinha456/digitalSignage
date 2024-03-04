@@ -50,6 +50,7 @@ func main() {
 	router.SetupRouter()
 	router.UserRouter()
 	router.DeviceRouter()
+	router.PlaylistRouter()
 	// Listen and Server in 0.0.0.0:8080
 	router.R.Run(":8080")
 }

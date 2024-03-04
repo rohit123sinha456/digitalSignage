@@ -17,9 +17,20 @@ var Client *mongo.Client
 var ObjectStoreClient *minio.Client
 var R *gin.Engine
 
-type Requestjson struct {
+type AddDeviceRequestjson struct {
 	Userid  string             `bson:"userid"`
 	Devices []DataModel.Device `bson:"devices"`
+}
+
+type PlayPlaylistRequestjson struct {
+	Action     DataModel.PlaylistActionType `bson:"action"`
+	Userid     string                       `bson:"userid"`
+	Playlistid string                       `bson:"playlistid"`
+}
+
+type CreatePlaylistRequestjson struct {
+	Userid   string             `bson:"userid"`
+	Playlist DataModel.Playlist `bson:"playlist"`
 }
 
 func SetupRouter() {
@@ -65,7 +76,7 @@ func UserRouter() {
 
 func DeviceRouter() {
 	R.POST("/device", func(c *gin.Context) {
-		var requestjsonvar Requestjson
+		var requestjsonvar AddDeviceRequestjson
 		reqerr := c.Bind(&requestjsonvar)
 		log.Printf("%+v", requestjsonvar)
 		if reqerr != nil {
@@ -83,5 +94,35 @@ func DeviceRouter() {
 		}
 
 	})
+}
 
+func PlaylistRouter() {
+	R.POST("/playplaylist", func(c *gin.Context) {
+		var requestjsonvar PlayPlaylistRequestjson
+		reqerr := c.Bind(&requestjsonvar)
+		log.Printf("%+v", requestjsonvar)
+		if reqerr != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"status": reqerr.Error()})
+		}
+		err := dbmaster.PlayPlaylist(c, Client, requestjsonvar.Userid, requestjsonvar.Playlistid)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"status": err.Error()})
+		} else {
+			c.JSON(http.StatusOK, gin.H{"status": "Successfully sent to Queue"})
+		}
+	})
+	R.POST("/playlist", func(c *gin.Context) {
+		var requestjsonvar CreatePlaylistRequestjson
+		reqerr := c.Bind(&requestjsonvar)
+		log.Printf("%+v", requestjsonvar)
+		if reqerr != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"status": reqerr.Error()})
+		}
+		playlistid, err := dbmaster.CreatePlaylist(c, Client, requestjsonvar.Userid, requestjsonvar.Playlist)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"status": err.Error()})
+		} else {
+			c.JSON(http.StatusOK, gin.H{"playlistid": playlistid})
+		}
+	})
 }

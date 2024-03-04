@@ -3,7 +3,6 @@ package rabbitqueue
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"log"
 	"strings"
 
@@ -30,11 +29,10 @@ func Connect(username string, password string, vhostname string) {
 	// defer ch.Close()
 }
 
-func PublishMessage(ctx context.Context, message DataModel.User, vhostname string) {
+func PublishMessage(ctx context.Context, message DataModel.Playlist, vhostname string) error {
 	body, err := json.Marshal(message)
 	if err != nil {
-		fmt.Println(err)
-		return
+		return err
 	}
 	erro := ch.PublishWithContext(
 		ctx,
@@ -47,7 +45,7 @@ func PublishMessage(ctx context.Context, message DataModel.User, vhostname strin
 			Body:        body,
 		})
 	if erro != nil {
-		log.Panicf("%s", erro)
+		return err
 	}
-	log.Printf("Message passed to the Queue")
+	return nil
 }
