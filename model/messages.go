@@ -1,18 +1,6 @@
 package DataModel
 
-type PlaylistType int
-
-const (
-	Single PlaylistType = iota
-	Multiple
-)
-
-type PlaylistActionType int
-
-const (
-	Stop PlaylistActionType = iota
-	Play
-)
+import "go.mongodb.org/mongo-driver/bson/primitive"
 
 type ImageBlock struct {
 	Imagetype   string `bson:"imagetype,omitempty"`
@@ -26,8 +14,7 @@ type DisplayBlock struct {
 }
 
 type Playlist struct {
-	ID           string         `bson:"id,omitempty"`
-	DeviceId     string         `bson:"deviceid,omitempty"`
-	PType        PlaylistType   `bson:"ptype,omitempty"`
-	DisplayBlock []DisplayBlock `bson:"displayblock,omitempty"`
+	ID           primitive.ObjectID `bson:"_id"`
+	DeviceId     primitive.ObjectID `bson:"deviceid,omitempty"`
+	DisplayBlock []DisplayBlock     `bson:"displayblock,omitempty"`
 }

@@ -6,29 +6,85 @@ import (
 	"log"
 	"reflect"
 
-	"github.com/google/uuid"
 	"github.com/rohit123sinha456/digitalSignage/common"
 	DataModel "github.com/rohit123sinha456/digitalSignage/model"
 	"github.com/rohit123sinha456/digitalSignage/rabbitqueue"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-func CreatePlaylist(ctx context.Context, client *mongo.Client, userID string, playlist DataModel.Playlist) (string, error) {
+type CreatePlaylistPaylaodRequest struct {
+	ID       primitive.ObjectID `bson:"_id"`
+	ScreenID primitive.ObjectID `bson:"screenid"`
+}
+
+// This function gets a ID of ContentList and returns a list of content
+func getcontentlistfromID(ctx context.Context, client *mongo.Client, userID string, contentListId string) ([]DataModel.ImageBlock, error) {
+	var imageblocks []DataModel.ImageBlock
+	contentList, err := ReadOneContentList(ctx, client, userID, contentListId)
+	if err != nil {
+		return imageblocks, err
+	}
+	for _, contentBlock := range contentList.ContentList {
+		var x DataModel.ImageBlock
+		x.Imagetype = contentBlock.Type
+		tempcontent, err := ReadOneContent(ctx, client, userID, contentBlock.Content)
+		if err != nil {
+			return imageblocks, err
+		}
+		x.Image = tempcontent.Link
+		x.DisplayTime = contentBlock.DisplayTime
+		imageblocks = append(imageblocks, x)
+	}
+
+	return imageblocks, nil
+}
+
+// This function takes only the screen ID and construct the Playlist Payload by fetching from various databases
+func createPlaylistPayload(ctx context.Context, client *mongo.Client, userID string, screen DataModel.Screen) (DataModel.Playlist, error) {
+	var newPlaylist DataModel.Playlist
+	var displayblockarr []DataModel.DisplayBlock
+	newPlaylist.ID = primitive.NewObjectID()
+	newPlaylist.DeviceId = screen.ID
+	for _, screenblock := range screen.Screenblock {
+		var displayblock DataModel.DisplayBlock
+		displayblock.BlockName = screenblock.BlockName
+		contentlistidstr := screenblock.ContentListID.Hex()
+		imagelistfordisplayblock, err := getcontentlistfromID(ctx, client, userID, contentlistidstr)
+		if err != nil {
+			return newPlaylist, err
+		}
+		displayblock.Imagelist = imagelistfordisplayblock
+		displayblockarr = append(displayblockarr, displayblock)
+	}
+	newPlaylist.DisplayBlock = displayblockarr
+	return newPlaylist, nil
+
+}
+
+func CreatePlaylist(ctx context.Context, client *mongo.Client, userID string, screenid string) (DataModel.Playlist, error) {
+	var playlist DataModel.Playlist
 	_, err := GetUser(client, userID)
 	if err != nil {
-		return "nil", err
+		return playlist, err
 	}
-	playlistid := uuid.NewString()
-	playlist.ID = playlistid
 	userdBname := common.ExtractUserSystemIdentifier(userID)
 	coll := client.Database(userdBname).Collection("playlist")
+	screen, err := ReadOneScreen(ctx, client, userID, screenid)
+	if err != nil {
+		return playlist, err
+	}
+	playlist, err = createPlaylistPayload(ctx, client, userID, screen)
+	if err != nil {
+		return playlist, err
+	}
 	_, inserterr := coll.InsertOne(ctx, playlist)
 	if inserterr != nil {
-		return "nil", inserterr
+		return playlist, inserterr
 	}
 	log.Printf("Created User Playlist")
-	return playlistid, nil
+	return playlist, nil
 }
 
 func GetPlaylist(ctx context.Context, client *mongo.Client, userID string, playlistID string) (DataModel.Playlist, error) {

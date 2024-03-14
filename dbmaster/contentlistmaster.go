@@ -77,5 +77,21 @@ func ReadContentList(ctx context.Context, client *mongo.Client, userID string) (
 	return contentlistarray, nil
 }
 
+func ReadOneContentList(ctx context.Context, client *mongo.Client, userID string, contentListId string) (DataModel.ContentList, error) {
+	var result DataModel.ContentList
+	userSystemname := common.ExtractUserSystemIdentifier(userID)
+	coll := client.Database(userSystemname).Collection("contentlist")
+	objectId, err := primitive.ObjectIDFromHex(contentListId)
+	if err != nil {
+		return result, err
+	}
+	filter := bson.D{{"_id", objectId}}
+	err = coll.FindOne(ctx, filter).Decode(&result)
+	if err != nil {
+		return result, err
+	}
+	return result, nil
+}
+
 // func UpdateContentList(){}
 // func RemoveContentList(){}

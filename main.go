@@ -11,5 +11,6 @@ func main() {
 	router.PlaylistRouter()
 	router.ContentRouter()
 	router.ContentListRouter()
+	router.ScreenRouter()
 	router.R.Run(":8080")
 }

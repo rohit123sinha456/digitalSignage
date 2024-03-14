@@ -65,24 +65,30 @@ We need 3 tables
         },
         ...]
     }
-3. Screen
+3. Screen [Done]
     It store all the screen information. That is Screen Name, Screen Dimensions, Screen Locations, Is the Screen Active or not.
     {
         Name:- Name of Screen,
         Dimension :- Dimension of Screen
         Location :- Location of Screen
+        display_block :- [
+        {
+            block :- B0 # Block B0 means whole screen
+            playlist_id :- id of playlist
+        },
+        {
+            block :- B1 # Block B0 means whole screen
+            playlist_id :- id of playlist
+        }
+    ]
     }
 4. Screen_to_user_mapping
     This code must be based on timestamp, so that its always unique and monotonic
     The screen shows a code. When the users adds a screen and gives the code, That particular screen Fetches the UserID from the database and get the name of the queue it should listen to 
-4. Screen_to_playlist_mapping
-    It maps playlist to screen. So that users can store the mapping.
-    {
-        screen_id:- Screen ID
-        playlist_id :- Playlist_id
-    }
-5. Messages
-    The JSON Playload mentioned below will be stores here. It store the complete message that needs to be sent to the user.
+
+5. Messages [Done]
+    The JSON Playload mentioned below will be stores here. It store the complete message that needs to be sent to the user. If the user clicks on update screen, then the screen ID is sent. From there we get the mapped collectionlistID and Collection ID and thus we create the message that needs to sent to the device. 
+    If the user clicks on update all. Then this function is called in a loop
 6. Blocks
     Multi Screen name with varying dimensions.
 
@@ -96,7 +102,6 @@ Data Format to be stored in Messages NoSQL database :-
 For Storing Single Image ( Only one image will be displayed on the screen)
 {
     id :- Unique_ID
-    type :- Single
     device_id :- device_id (screen_id)
     display_block :- {[
     block :- B0 # Block B0 means whole screen
@@ -114,7 +119,6 @@ This is for playlist to be shown on the whole screen
 
 {
     id :- unique_Id
-    type :- multiple
     device_id :- device_id
     display_block :- {[
     block :- B0 # Block B0 means whole screen
@@ -138,7 +142,6 @@ This is for if the screen is sub divided into multiple blocks and each block wil
 This means B1 will have a playlist and B2 will have a static image
 {
     id :- unique_Id
-    type :- multiple
     device_id :- device_id
     display_block :- {
     [

@@ -46,3 +46,11 @@ func ContentListRouter() {
 	// R.GET("/contentlist/:id", controller.GetContentbyIDController)
 
 }
+
+func ScreenRouter() {
+	R.POST("/screen", controller.CreateScreenController)
+	R.GET("/screen", controller.ReadScreenController)
+	R.GET("/screen/:id", controller.GetScreenbyIDController)
+	R.POST("/screen/:id", controller.UpdateScreenbyIDController)
+
+}
