@@ -9,8 +9,6 @@ import (
 )
 
 type PlayPlaylistRequestjson struct {
-	Action     string `bson:"action"`
-	Userid     string `bson:"userid"`
 	Playlistid string `bson:"playlistid"`
 }
 
@@ -20,12 +18,14 @@ type CreatePlaylistRequestjson struct {
 
 func PlayPlaylistController(c *gin.Context) {
 	var requestjsonvar PlayPlaylistRequestjson
+	Userid := "dd50c75c-7509-4f66-b312-a98445c6c65c"
+
 	reqerr := c.Bind(&requestjsonvar)
 	log.Printf("%+v", requestjsonvar)
 	if reqerr != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"status": reqerr.Error()})
 	}
-	err := dbmaster.PlayPlaylist(c, Client, requestjsonvar.Userid, requestjsonvar.Playlistid)
+	err := dbmaster.PlayPlaylist(c, Client, Userid, requestjsonvar.Playlistid)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"status": err.Error()})
 	} else {
