@@ -9,5 +9,7 @@ func main() {
 	router.UserRouter()
 	router.DeviceRouter()
 	router.PlaylistRouter()
+	router.ContentRouter()
+	router.ContentListRouter()
 	router.R.Run(":8080")
 }

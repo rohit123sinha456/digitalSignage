@@ -1,5 +1,17 @@
 ## Architecture :-
 
+Queue
+The the user specific Que I am sending the message that the device recieves and shows the display.
+There are few global queues that has to be there for certain global feature.
+Discover Websocket :- Whenever this socket sends a message it contains two info -
+    {
+        Screen_Code,
+        User_id
+    }
+
+So That now the screens becomes aware and starts listening to the user specific queue.
+
+
 API
 1. Create User - Returns User ID
 2. Login User and get JWT Token
@@ -28,18 +40,64 @@ User to Device Mapping :-
 Each client can have multiple devices connected. Each device will have a unique ID and each device can show different things
 
 DataBases :-
+We need 3 tables 
+1. Content [DONE]
+    It Stores the content. That is user can upload Images/Videos etc
+    {
+        type:-Image/Video/GIF
+        Link :- Link to image/Video/GIF
+    }
+2. Contentlist [DONE]
+    It stores the playlist created by the user. It includes the time and respective content.
+    So the format is like 
+    {
+    name :- Name_of_playlist
+    images :- [
+        {
+            type :- Image/Video/GIF
+            image:- Content_id,
+            display_time :- 10 sec
+        },
+        {
+            type :- Image/Video/GIF
+            image:- Content_id,
+            display_time :- 20 sec
+        },
+        ...]
+    }
+3. Screen
+    It store all the screen information. That is Screen Name, Screen Dimensions, Screen Locations, Is the Screen Active or not.
+    {
+        Name:- Name of Screen,
+        Dimension :- Dimension of Screen
+        Location :- Location of Screen
+    }
+4. Screen_to_user_mapping
+    This code must be based on timestamp, so that its always unique and monotonic
+    The screen shows a code. When the users adds a screen and gives the code, That particular screen Fetches the UserID from the database and get the name of the queue it should listen to 
+4. Screen_to_playlist_mapping
+    It maps playlist to screen. So that users can store the mapping.
+    {
+        screen_id:- Screen ID
+        playlist_id :- Playlist_id
+    }
+5. Messages
+    The JSON Playload mentioned below will be stores here. It store the complete message that needs to be sent to the user.
+6. Blocks
+    Multi Screen name with varying dimensions.
+
 Screen_Block_Type - It Stores block name ( B0,B1 etc ) and the aspect ratio of each block type .
 Users - To store user information ( along with a unique user ID)
 Images - A Database to store Image Metadata ( User Id, Image link, upload date and so on)
 Playlists :- A collection of collection ( one collection for each user )
 -   Each Collection stores Single Image or Image playlist that needs to be displayed for that particular User
 
-Data Format to be stored in Playlist NoSQL database :-
+Data Format to be stored in Messages NoSQL database :-
 For Storing Single Image ( Only one image will be displayed on the screen)
 {
     id :- Unique_ID
     type :- Single
-    device_id :- device_id
+    device_id :- device_id (screen_id)
     display_block :- {[
     block :- B0 # Block B0 means whole screen
     images :- [

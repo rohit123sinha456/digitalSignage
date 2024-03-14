@@ -32,3 +32,17 @@ func PlaylistRouter() {
 	R.POST("/playplaylist", controller.PlayPlaylistController)
 	R.POST("/playlist", controller.CreatePlaylist)
 }
+
+func ContentRouter() {
+	R.POST("/content", controller.CreateContentController)
+	R.GET("/content", controller.ReadContentController)
+	R.GET("/content/:id", controller.GetContentbyIDController)
+
+}
+
+func ContentListRouter() {
+	R.POST("/contentlist", controller.CreateContentListController)
+	// R.GET("/contentlist", controller.ReadContentController)
+	// R.GET("/contentlist/:id", controller.GetContentbyIDController)
+
+}
