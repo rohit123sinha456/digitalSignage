@@ -4,6 +4,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/rohit123sinha456/digitalSignage/controller"
 	"github.com/rohit123sinha456/digitalSignage/dbmaster"
+	"github.com/rohit123sinha456/digitalSignage/middleware"
 	"github.com/rohit123sinha456/digitalSignage/objectstore"
 )
 
@@ -22,6 +23,13 @@ func UserRouter() {
 	R.GET("/user/:id", controller.GetUserbyIDController)
 
 	R.POST("/user", controller.CreateNewUserController)
+	R.POST("users/signup", controller.Signup)
+	R.POST("users/login", controller.Login)
+}
+
+func AuthRoutes() {
+	R.Use(middleware.Authenticate())
+	R.GET("/usersdata", controller.GetAllUserController)
 }
 
 func DeviceRouter() {

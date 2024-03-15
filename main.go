@@ -12,5 +12,6 @@ func main() {
 	router.ContentRouter()
 	router.ContentListRouter()
 	router.ScreenRouter()
+	router.AuthRoutes()
 	router.R.Run(":8080")
 }

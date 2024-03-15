@@ -1,4 +1,7 @@
 ## Architecture :-
+JWT_AUTH
+https://www.golang.company/blog/jwt-authentication-in-golang-using-gin-web-framework
+
 
 Queue
 The the user specific Que I am sending the message that the device recieves and shows the display.
