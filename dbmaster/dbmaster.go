@@ -68,18 +68,18 @@ func GetUserSystemInfo(ctx context.Context, client *mongo.Client, userId string)
 // Create a transactional atomic property that if half way through the systen fails, all the previous operations
 // gets reverted. i.e if record entered in db and bucket creaed but rabbitmq failed, the users needs tto be deleted
 // from the DB and the bucket needs to be detected as well
-func CreateUser(ctx context.Context, client *mongo.Client, objectStoreClient *minio.Client, newUser DataModel.User) error {
+func CreateUser(ctx context.Context, client *mongo.Client, objectStoreClient *minio.Client, newUser DataModel.User) (string, error) {
 	userID := uuid.NewString()
 	doesUserExists, _ := GetUser(client, userID)
 	doesUserSystemInfoExists, _ := GetUserSystemInfo(ctx, client, userID)
 	if reflect.ValueOf(doesUserExists).IsZero() != true || reflect.ValueOf(doesUserSystemInfoExists).IsZero() != true {
-		return errors.New(" Generated UserId Already Exists, Please try again")
+		return "", errors.New(" Generated UserId Already Exists, Please try again")
 	}
 	newUser.UserID = userID
 	coll := client.Database("user").Collection("userData")
 	_, err := coll.InsertOne(ctx, newUser)
 	if err != nil {
-		return err
+		return "", err
 	}
 	log.Printf("User Successfully inserted in Database")
 	uservhostname := common.CreatevHostName(userID)
@@ -91,13 +91,13 @@ func CreateUser(ctx context.Context, client *mongo.Client, objectStoreClient *mi
 	metainfoerr := CreateUserSystemInfo(ctx, client, newUser)
 	log.Printf("Created User")
 	if queueerr != nil {
-		return queueerr
+		return "", queueerr
 	} else if obserror != nil {
-		return obserror
+		return "", obserror
 	} else if metainfoerr != nil {
-		return metainfoerr
+		return "", metainfoerr
 	} else {
-		return nil
+		return userID, nil
 	}
 }
 

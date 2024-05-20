@@ -3,6 +3,7 @@ package dbmaster
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log"
 	"reflect"
 
@@ -19,66 +20,21 @@ type CreatePlaylistPaylaodRequest struct {
 	ScreenID primitive.ObjectID `bson:"screenid"`
 }
 
-// This function gets a ID of ContentList and returns a list of content
-func getcontentlistfromID(ctx context.Context, client *mongo.Client, userID string, contentListId string) ([]DataModel.ImageBlock, error) {
-	var imageblocks []DataModel.ImageBlock
-	contentList, err := ReadOneContentList(ctx, client, userID, contentListId)
-	if err != nil {
-		return imageblocks, err
-	}
-	for _, contentBlock := range contentList.ContentList {
-		var x DataModel.ImageBlock
-		x.Imagetype = contentBlock.Type
-		tempcontent, err := ReadOneContent(ctx, client, userID, contentBlock.Content)
-		if err != nil {
-			return imageblocks, err
-		}
-		x.Image = tempcontent.Link
-		x.DisplayTime = contentBlock.DisplayTime
-		imageblocks = append(imageblocks, x)
-	}
-
-	return imageblocks, nil
+func checkifscreenexists(ctx context.Context, coll *mongo.Collection, contentlist DataModel.DeviceBlock) {
+	log.Printf("Screen Check")
+}
+func checkifimageexists(ctx context.Context, coll *mongo.Collection, contentlist DataModel.ImageBlock) {
+	log.Printf("Image Check")
 }
 
-// This function takes only the screen ID and construct the Playlist Payload by fetching from various databases
-func createPlaylistPayload(ctx context.Context, client *mongo.Client, userID string, screen DataModel.Screen) (DataModel.Playlist, error) {
-	var newPlaylist DataModel.Playlist
-	var displayblockarr []DataModel.DisplayBlock
-	newPlaylist.ID = primitive.NewObjectID()
-	newPlaylist.DeviceId = screen.ID
-	for _, screenblock := range screen.Screenblock {
-		var displayblock DataModel.DisplayBlock
-		displayblock.BlockName = screenblock.BlockName
-		contentlistidstr := screenblock.ContentListID.Hex()
-		imagelistfordisplayblock, err := getcontentlistfromID(ctx, client, userID, contentlistidstr)
-		if err != nil {
-			return newPlaylist, err
-		}
-		displayblock.Imagelist = imagelistfordisplayblock
-		displayblockarr = append(displayblockarr, displayblock)
-	}
-	newPlaylist.DisplayBlock = displayblockarr
-	return newPlaylist, nil
-
-}
-
-func CreatePlaylist(ctx context.Context, client *mongo.Client, userID string, screenid string) (DataModel.Playlist, error) {
-	var playlist DataModel.Playlist
+func CreatePlaylist(ctx context.Context, client *mongo.Client, userID string, playlist DataModel.Playlist) (DataModel.Playlist, error) {
+	playlist.ID = primitive.NewObjectID()
 	_, err := GetUser(client, userID)
 	if err != nil {
 		return playlist, err
 	}
 	userdBname := common.ExtractUserSystemIdentifier(userID)
 	coll := client.Database(userdBname).Collection("playlist")
-	screen, err := ReadOneScreen(ctx, client, userID, screenid)
-	if err != nil {
-		return playlist, err
-	}
-	playlist, err = createPlaylistPayload(ctx, client, userID, screen)
-	if err != nil {
-		return playlist, err
-	}
 	_, inserterr := coll.InsertOne(ctx, playlist)
 	if inserterr != nil {
 		return playlist, inserterr
@@ -87,16 +43,66 @@ func CreatePlaylist(ctx context.Context, client *mongo.Client, userID string, sc
 	return playlist, nil
 }
 
+func UpdatePlaylist(ctx context.Context, client *mongo.Client, userID string, playlistID string, updatejson DataModel.UpdatePlaylistRequest) error {
+	userSystemname := common.ExtractUserSystemIdentifier(userID)
+	coll := client.Database(userSystemname).Collection("playlist")
+	objectId, err := primitive.ObjectIDFromHex(playlistID)
+	if err != nil {
+		return err
+	}
+	updateDoc := bson.M{}
+	if updatejson.Name != "" {
+		updateDoc["playlistname"] = updatejson.Name
+	}
+	if len(updatejson.DeviceBlock) != 0 {
+		updateDoc["deviceblock"] = updatejson.DeviceBlock
+		fmt.Printf("%v\n", updatejson.DeviceBlock)
+
+	}
+	filter := bson.D{{"_id", objectId}}
+	update := bson.M{"$set": updateDoc}
+	result, updateerr := coll.UpdateOne(ctx, filter, update)
+	if updateerr != nil {
+		return updateerr
+	}
+	fmt.Printf("Documents updated: %v\n", result.ModifiedCount)
+	return nil
+}
 func GetPlaylist(ctx context.Context, client *mongo.Client, userID string, playlistID string) (DataModel.Playlist, error) {
 	var result DataModel.Playlist
 	userSystemname := common.ExtractUserSystemIdentifier(userID)
 	coll := client.Database(userSystemname).Collection("playlist")
-	filter := bson.D{{"id", playlistID}}
-	err := coll.FindOne(ctx, filter).Decode(&result)
+	objectId, err := primitive.ObjectIDFromHex(playlistID)
+	if err != nil {
+		return result, err
+	}
+	filter := bson.D{{"_id", objectId}}
+	err = coll.FindOne(ctx, filter).Decode(&result)
 	if err != nil {
 		return result, err
 	}
 	return result, nil
+}
+
+func ReadPlaylist(ctx context.Context, client *mongo.Client, userID string) ([]DataModel.Playlist, error) {
+	var contentlistarray []DataModel.Playlist
+	userSystemname := common.ExtractUserSystemIdentifier(userID)
+	coll := client.Database(userSystemname).Collection("playlist")
+	filter := bson.D{{}}
+	curr, err := coll.Find(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+
+	for curr.Next(ctx) {
+		var result DataModel.Playlist
+		if err := curr.Decode(&result); err != nil {
+			return nil, err
+		}
+		contentlistarray = append(contentlistarray, result)
+	}
+	defer curr.Close(ctx)
+	return contentlistarray, nil
 }
 
 func PlayPlaylist(ctx context.Context, client *mongo.Client, userID string, playlistid string) error {

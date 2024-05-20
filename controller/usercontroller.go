@@ -50,7 +50,7 @@ func GetUserbyIDController(c *gin.Context) {
 func CreateNewUserController(c *gin.Context) {
 	var newUser DataModel.User
 	if c.Bind(&newUser) == nil {
-		err := dbmaster.CreateUser(c, Client, ObjectStoreClient, newUser)
+		_, err := dbmaster.CreateUser(c, Client, ObjectStoreClient, newUser)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"status": err.Error()})
 		} else {
@@ -121,14 +121,14 @@ func Signup(c *gin.Context) {
 	user.Token = &token
 	user.Refresh_token = &refreshToken
 
-	resultInsertionNumber, insertErr := userCollection.InsertOne(ctx, user)
+	userappid, insertErr := dbmaster.CreateUser(c, Client, ObjectStoreClient, user)
 	if insertErr != nil {
 		msg := fmt.Sprintf("User Details were not Saved")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": msg})
 		return
 	}
 	defer cancel()
-	c.JSON(http.StatusOK, resultInsertionNumber)
+	c.JSON(http.StatusOK, userappid)
 
 }
 

@@ -11,23 +11,23 @@ import (
 
 func CreateScreenController(c *gin.Context) {
 	var requestjsonvar DataModel.Screen
-	userid := "dd50c75c-7509-4f66-b312-a98445c6c65c"
+	userid := c.GetHeader("userid")
 	reqerr := c.Bind(&requestjsonvar)
 	log.Printf("%+v", requestjsonvar)
 	if reqerr != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"status": reqerr.Error()})
 	}
-	playlistid, err := dbmaster.CreateScreen(c, Client, userid, requestjsonvar)
+	screenid, err := dbmaster.CreateScreen(c, Client, userid, requestjsonvar)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"status": err.Error()})
 	} else {
-		c.JSON(http.StatusOK, gin.H{"playlistid": playlistid})
+		c.JSON(http.StatusOK, gin.H{"screenid": screenid})
 	}
 }
 
 func ReadScreenController(c *gin.Context) {
 	var contentarray []DataModel.Screen
-	userid := "dd50c75c-7509-4f66-b312-a98445c6c65c"
+	userid := c.GetHeader("userid")
 	contentarray, err := dbmaster.ReadScreen(c, Client, userid)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"status": err.Error()})
@@ -36,7 +36,7 @@ func ReadScreenController(c *gin.Context) {
 }
 
 func GetScreenbyIDController(c *gin.Context) {
-	userid := "dd50c75c-7509-4f66-b312-a98445c6c65c"
+	userid := c.GetHeader("userid")
 	contentID := c.Params.ByName("id")
 	user, err := dbmaster.ReadOneScreen(c, Client, userid, contentID)
 	if err != nil {
@@ -48,7 +48,7 @@ func GetScreenbyIDController(c *gin.Context) {
 
 func UpdateScreenbyIDController(c *gin.Context) {
 	var requestjsonvar []DataModel.ScreenBlock
-	userid := "dd50c75c-7509-4f66-b312-a98445c6c65c"
+	userid := c.GetHeader("userid")
 	screenID := c.Params.ByName("id")
 	reqerr := c.Bind(&requestjsonvar)
 	log.Printf("%+v", requestjsonvar)

@@ -7,7 +7,6 @@ import (
 func main() {
 	router.SetupRouter()
 	router.UserRouter()
-	router.DeviceRouter()
 	router.PlaylistRouter()
 	router.ContentRouter()
 	router.ContentListRouter()

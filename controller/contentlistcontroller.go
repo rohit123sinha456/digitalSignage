@@ -11,7 +11,7 @@ import (
 
 func CreateContentListController(c *gin.Context) {
 	var requestjsonvar DataModel.ContentList
-	userid := "dd50c75c-7509-4f66-b312-a98445c6c65c"
+	userid := c.GetHeader("userid")
 	reqerr := c.Bind(&requestjsonvar)
 	log.Printf("%+v", requestjsonvar)
 	log.Printf("Content Block")
@@ -28,7 +28,7 @@ func CreateContentListController(c *gin.Context) {
 
 func ReadContentListController(c *gin.Context) {
 	var contentarray []DataModel.ContentList
-	userid := "dd50c75c-7509-4f66-b312-a98445c6c65c"
+	userid := c.GetHeader("userid")
 	contentarray, err := dbmaster.ReadContentList(c, Client, userid)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"status": err.Error()})

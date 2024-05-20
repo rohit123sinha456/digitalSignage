@@ -11,23 +11,24 @@ import (
 
 func CreateContentController(c *gin.Context) {
 	var requestjsonvar DataModel.Content
-	userid := "dd50c75c-7509-4f66-b312-a98445c6c65c"
+	userid := c.GetHeader("userid")
+	log.Printf("%+v", userid)
 	reqerr := c.Bind(&requestjsonvar)
 	log.Printf("%+v", requestjsonvar)
 	if reqerr != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"status": reqerr.Error()})
 	}
-	playlistid, err := dbmaster.CreateContent(c, Client, userid, requestjsonvar)
+	contentid, err := dbmaster.CreateContent(c, Client, userid, requestjsonvar)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"status": err.Error()})
 	} else {
-		c.JSON(http.StatusOK, gin.H{"playlistid": playlistid})
+		c.JSON(http.StatusOK, gin.H{"contentid": contentid})
 	}
 }
 
 func ReadContentController(c *gin.Context) {
 	var contentarray []DataModel.Content
-	userid := "dd50c75c-7509-4f66-b312-a98445c6c65c"
+	userid := c.GetHeader("userid")
 	contentarray, err := dbmaster.ReadContent(c, Client, userid)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"status": err.Error()})
@@ -36,7 +37,7 @@ func ReadContentController(c *gin.Context) {
 }
 
 func GetContentbyIDController(c *gin.Context) {
-	userid := "dd50c75c-7509-4f66-b312-a98445c6c65c"
+	userid := c.GetHeader("userid")
 	contentID := c.Params.ByName("id")
 	user, err := dbmaster.ReadOneContent(c, Client, userid, contentID)
 	if err != nil {
