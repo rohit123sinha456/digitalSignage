@@ -22,6 +22,7 @@ services:
     command: server --console-address ":9001" /data
 
   app:
+    image: signage-api
     build: .
     ports:
       - "8080:8080"

@@ -175,3 +175,7 @@ This means B1 will have a playlist and B2 will have a static image
     ]
     }
 }
+
+## To Deploy
+docker compose build
+docker stack deploy -c compose.yaml dsignage
