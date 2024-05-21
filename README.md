@@ -179,3 +179,6 @@ This means B1 will have a playlist and B2 will have a static image
 ## To Deploy
 docker compose build
 docker stack deploy -c compose.yaml dsignage
+ get the object store access key and update the env file
+ docker compose build -t app .
+docker stack deploy -c compose.yaml dsignage

@@ -25,6 +25,6 @@ COPY --from=build /app/myapp .
 COPY .env ./
 # Set the timezone and install CA certificates
 # RUN apk --no-cache add ca-certificates tzdata
-EXPOSE 8080
+EXPOSE 8088
 # Set the entrypoint command
 ENTRYPOINT ["/app/myapp"]
