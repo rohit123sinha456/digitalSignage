@@ -177,8 +177,20 @@ This means B1 will have a playlist and B2 will have a static image
 }
 
 ## To Deploy
-docker compose build
-docker stack deploy -c compose.yaml dsignage
- get the object store access key and update the env file
- docker compose build -t app .
-docker stack deploy -c compose.yaml dsignage
+- delete db and minio folder
+- adjust the env file 
+- docker compose build
+- docker compose up -d
+- check all services available
+- docker compose down
+- docker stack deploy -c compose.yaml dsignage [ This doesn't take the .env values to compose.yaml] so to address this
+- sudo apt install docker-config
+- sudo su
+- docker stack deploy -c <(docker-compose config) dsignage
+- get the object store access key and update the env file
+- docker compose build -t app .
+docker stack deploy -c <(docker-compose config) dsignage
+
+
+while deploying if any issue with user credential is found delete minio/db folder and start again
+
