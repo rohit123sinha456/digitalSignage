@@ -2,10 +2,13 @@ module github.com/rohit123sinha456/digitalSignage
 
 go 1.22.0
 
+// go 1.23
+
 require (
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/gin-gonic/gin v1.9.1
 	github.com/google/uuid v1.6.0
+	github.com/joho/godotenv v1.5.1
 	github.com/minio/minio-go/v7 v7.0.67
 	github.com/wagslane/go-rabbitmq v0.12.4
 	go.mongodb.org/mongo-driver v1.14.0

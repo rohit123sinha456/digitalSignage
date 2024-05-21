@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	amqp "github.com/rabbitmq/amqp091-go"
+	"github.com/rohit123sinha456/digitalSignage/config"
 	DataModel "github.com/rohit123sinha456/digitalSignage/model"
 )
 
@@ -20,7 +21,8 @@ func failOnError(err error, msg string) {
 }
 
 func Connect(username string, password string, vhostname string) {
-	rabbiturl := strings.Join([]string{"amqp://", username, ":", password, "@localhost:5672/", vhostname}, "")
+	var rabbituri string = config.GetEnvbyKey("APPRABBITURL")
+	var rabbiturl string = strings.Join([]string{"amqp://", username, ":", password, "@", rabbituri, vhostname}, "")
 	conn, err := amqp.Dial(rabbiturl) //"amqp://guest:guest@localhost:5672/"
 	failOnError(err, "Failed to connect to RabbitMQ")
 	// defer conn.Close()

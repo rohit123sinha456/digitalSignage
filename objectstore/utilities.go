@@ -7,14 +7,16 @@ import (
 
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
+	"github.com/rohit123sinha456/digitalSignage/config"
+
 )
 
 // var minioClient *minio.Client
 
 func ConnectObjectStore() *minio.Client {
-	endpoint := "localhost:9000"
-	accessKeyID := "xiGpoR8ggd6gd3c47v0C"
-	secretAccessKey := "d1LtofnWlJflsXzKSu3h01o5WvIwZcnkqET7QyTd"
+	var endpoint string = config.GetEnvbyKey("APPOSURL")                 //"localhost:9000"
+	var accessKeyID string = config.GetEnvbyKey("APPOSACCKEY")           //"xiGpoR8ggd6gd3c47v0C"
+	var secretAccessKey string = config.GetEnvbyKey("APPOSSECRETACCKEY") //"d1LtofnWlJflsXzKSu3h01o5WvIwZcnkqET7QyTd"
 	useSSL := false
 
 	// Initialize minio client object.

@@ -21,10 +21,17 @@ services:
       - back-tier
     command: server --console-address ":9001" /data
 
+  app:
+    build: .
+    ports:
+      - "8080:8080"
+    networks:
+      - back-tier
+
   mongo:
     image: mongodb/mongodb-community-server:latest
     ports:
-      - "27017:27017"
+      - "27019:27017"
     volumes:
       - ./db/data:/data/db 
     networks:

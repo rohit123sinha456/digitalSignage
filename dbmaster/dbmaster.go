@@ -11,6 +11,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/minio/minio-go/v7"
 	"github.com/rohit123sinha456/digitalSignage/common"
+	"github.com/rohit123sinha456/digitalSignage/config"
 	DataModel "github.com/rohit123sinha456/digitalSignage/model"
 	"github.com/rohit123sinha456/digitalSignage/objectstore"
 	"github.com/rohit123sinha456/digitalSignage/rabbitqueue"
@@ -22,7 +23,8 @@ import (
 // var client *mongo.Client
 
 func ConnectDB() *mongo.Client {
-	const uri = "mongodb://localhost:27017"
+	uri := config.GetEnvbyKey("APPDB")//os.Getenv("APPDB") //"mongodb://localhost:27017"
+	fmt.Println(uri)
 	serverAPI := options.ServerAPI(options.ServerAPIVersion1)
 	opts := options.Client().ApplyURI(uri).SetServerAPIOptions(serverAPI)
 	client, err := mongo.Connect(context.TODO(), opts)
