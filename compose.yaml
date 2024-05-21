@@ -13,8 +13,8 @@ services:
       - "9000:9000"
       - "9001:9001"
     environment:
-      - MINIO_ROOT_USER=ROOTUSER
-      - MINIO_ROOT_PASSWORD=CHANGEME123
+      - MINIO_ROOT_USER=${DOCKERMINIOROOTUSER}
+      - MINIO_ROOT_PASSWORD=${DOCKERMINIOROOTPASS}
     volumes:
       - ./minio/data:/data
     networks:
@@ -29,9 +29,12 @@ services:
       - back-tier
 
   mongo:
-    image: mongodb/mongodb-community-server:latest
+    image: mongo
     ports:
       - "27019:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${DOCKERMONGOROOTUSER}
+      MONGO_INITDB_ROOT_PASSWORD: ${DOCKERMONGOROOTPWD}
     volumes:
       - ./db/data:/data/db 
     networks:

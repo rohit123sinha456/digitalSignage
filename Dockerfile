@@ -22,7 +22,7 @@ WORKDIR /app
 
 # Copy the binary from the build stage
 COPY --from=build /app/myapp .
-
+COPY .env ./
 # Set the timezone and install CA certificates
 # RUN apk --no-cache add ca-certificates tzdata
 EXPOSE 8080
