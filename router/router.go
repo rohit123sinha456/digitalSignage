@@ -6,6 +6,8 @@ import (
 	"github.com/rohit123sinha456/digitalSignage/dbmaster"
 	"github.com/rohit123sinha456/digitalSignage/middleware"
 	"github.com/rohit123sinha456/digitalSignage/objectstore"
+	DataModel "github.com/rohit123sinha456/digitalSignage/model"
+
 )
 
 var R *gin.Engine
@@ -61,9 +63,17 @@ func ContentListRouter() {
 }
 
 func ScreenRouter() { //Done
+	ch := make(chan DataModel.EventStreamRequest)
 	private.POST("/screen", controller.CreateScreenController)
 	private.GET("/screen", controller.ReadScreenController)
 	private.GET("/screen/:id", controller.GetScreenbyIDController)
 	private.POST("/screen/:id", controller.UpdateScreenbyIDController) // Not working
 
+	private.POST("/event-stream/:id", func(c *gin.Context) {
+		screencode := c.Params.ByName("id")
+		controller.HandleEventStreamPost(c, ch, screencode)
+	})
+	public.GET("/event-stream/:id", middleware.HeadersMiddleware(), func(c *gin.Context) {
+		controller.HandleEventStreamGet(c, ch)
+	})
 }
