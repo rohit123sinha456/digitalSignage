@@ -2,6 +2,7 @@ package router
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/gin-contrib/cors"
 	"github.com/rohit123sinha456/digitalSignage/controller"
 	"github.com/rohit123sinha456/digitalSignage/dbmaster"
 	"github.com/rohit123sinha456/digitalSignage/middleware"
@@ -16,6 +17,7 @@ var private *gin.RouterGroup
 
 func SetupRouter() {
 	R = gin.Default()
+	R.Use(cors.Default())
 	private = R.Group("/api")
 	private.Use(middleware.Authenticate())
 	public = R.Group("/api/public")
