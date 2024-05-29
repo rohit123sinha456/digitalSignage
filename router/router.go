@@ -18,6 +18,7 @@ func SetupRouter() {
 	R = gin.Default()
 	config := cors.DefaultConfig()
 	config.AllowOrigins = []string{"*"}
+	config.AllowAllOrigins = true
 	// R.Use(cors.Default())
 	R.Use(cors.New(config))
 	private = R.Group("/api")
