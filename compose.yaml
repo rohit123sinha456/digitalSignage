@@ -26,6 +26,8 @@ services:
     build: .
     ports:
       - "8088:8088"
+    environment:
+      - GIN_MODE=release
     networks:
       - back-tier
 
