@@ -74,6 +74,8 @@ func ScreenRouter() { //Done
 	private.GET("/screen", controller.ReadScreenController)
 	private.GET("/screen/:id", controller.GetScreenbyIDController)
 	private.POST("/screen/:id", controller.UpdateScreenbyIDController) // Not working
+	private.DELETE("/screen/:id", controller.DeleteScreenbyIDController) // Delete Scrren as well delete from playlist
+	
 
 	private.POST("/event-stream/:id", func(c *gin.Context) {
 		screencode := c.Params.ByName("id")

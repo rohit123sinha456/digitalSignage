@@ -103,6 +103,80 @@ func CreateUser(ctx context.Context, client *mongo.Client, objectStoreClient *mi
 	}
 }
 
+func TransactionCreateUser(ctx context.Context, client *mongo.Client, objectStoreClient *minio.Client, newUser DataModel.User) (string, error) {
+	userID := uuid.NewString()
+    doesUserExists, _ := GetUser(client, userID)
+    doesUserSystemInfoExists, _ := GetUserSystemInfo(ctx, client, userID)
+    if !reflect.ValueOf(doesUserExists).IsZero() || !reflect.ValueOf(doesUserSystemInfoExists).IsZero() {
+        return "", errors.New("Generated UserId Already Exists, Please try again")
+    }
+
+    newUser.UserID = userID
+    coll := client.Database("user").Collection("userData")
+    _, err := coll.InsertOne(ctx, newUser)
+    if err != nil {
+        return "", err
+    }
+    log.Printf("User Successfully inserted in Database")
+
+    uservhostname := common.CreatevHostName(userID)
+    userdsystemname := common.ExtractUserSystemIdentifier(userID)
+    userbucketname := common.CreateBucketName(userID)
+
+    // Create bucket
+    obserror := objectstore.CreateBucket(ctx, objectStoreClient, userbucketname)
+    if obserror != nil {
+        // Rollback user creation
+        _, rollbackErr := coll.DeleteOne(ctx, bson.M{"userid": userID})
+        if rollbackErr != nil {
+            log.Printf("Failed to rollback user creation: %v", rollbackErr)
+        }
+        return "", obserror
+    }
+
+    // Setup RabbitMQ
+    queueerr := rabbitqueue.SetupUserandvHost(userdsystemname, uservhostname)
+    if queueerr != nil {
+        // Rollback bucket creation and user creation
+        rollbackBucketErr := objectstore.DeleteBucket(ctx, objectStoreClient, userbucketname)
+        if rollbackBucketErr != nil {
+            log.Printf("Failed to rollback bucket creation: %v", rollbackBucketErr)
+        }
+        _, rollbackErr := coll.DeleteOne(ctx, bson.M{"userid": userID})
+        if rollbackErr != nil {
+            log.Printf("Failed to rollback user creation: %v", rollbackErr)
+        }
+        return "", queueerr
+    }
+
+    // Create user system info
+    metainfoerr := CreateUserSystemInfo(ctx, client, newUser)
+    if metainfoerr != nil {
+        // Rollback RabbitMQ setup, bucket creation, and user creation
+        rollbackQueueErr := rabbitqueue.DeleteUserandvHost(userdsystemname, uservhostname)
+        if rollbackQueueErr != nil {
+            log.Printf("Failed to rollback RabbitMQ setup: %v", rollbackQueueErr)
+        }
+        rollbackBucketErr := objectstore.DeleteBucket(ctx, objectStoreClient, userbucketname)
+        if rollbackBucketErr != nil {
+            log.Printf("Failed to rollback bucket creation: %v", rollbackBucketErr)
+        }
+        _, rollbackErr := coll.DeleteOne(ctx, bson.M{"userid": userID})
+        if rollbackErr != nil {
+            log.Printf("Failed to rollback user creation: %v", rollbackErr)
+        }
+        return "", metainfoerr
+    }
+
+    log.Printf("Created User")
+    return userID, nil
+
+}
+
+
+
+
+
 // Modify the function so that base on the string length, it uses fileds of systemID, vHostID and so on from userSystemInfo
 // fetch the userID and then fetch the result from userData
 func GetUser(client *mongo.Client, userId string) (DataModel.User, error) {

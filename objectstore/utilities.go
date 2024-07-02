@@ -40,3 +40,12 @@ func CreateBucket(ctx context.Context, minioClient *minio.Client, bucketName str
 	fmt.Println("Successfully created UserBucket.")
 	return nil
 }
+
+func DeleteBucket(ctx context.Context, minioClient *minio.Client, bucketName string) error {
+	err := minioClient.RemoveBucket(ctx, bucketName)
+	if err != nil {
+		return err
+	}
+	fmt.Println("Successfully Deleted UserBucket.")
+	return nil
+}

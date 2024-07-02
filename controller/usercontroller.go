@@ -95,8 +95,9 @@ func Signup(c *gin.Context) {
 	count, err := userCollection.CountDocuments(ctx, bson.M{"email": user.Email})
 	defer cancel()
 	if err != nil {
-		log.Panic(err)
+		// log.Panic(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error detected while fetching the email"})
+		return
 	}
 
 	password := HashPassword(*user.Password)
@@ -105,12 +106,14 @@ func Signup(c *gin.Context) {
 	count, err = userCollection.CountDocuments(ctx, bson.M{"phone": user.Phone})
 	defer cancel()
 	if err != nil {
-		log.Panic(err)
+		// log.Panic(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"Error": "Error occured while fetching the phone number"})
+		return
 	}
 
 	if count > 0 {
 		c.JSON(http.StatusInternalServerError, gin.H{"Error": "The mentioned E-Mail or Phone Number already exists"})
+		return
 	}
 
 	user.Created_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
@@ -121,14 +124,22 @@ func Signup(c *gin.Context) {
 	user.Token = &token
 	user.Refresh_token = &refreshToken
 
-	userappid, insertErr := dbmaster.CreateUser(c, Client, ObjectStoreClient, user)
+	// userappid, insertErr := dbmaster.CreateUser(c, Client, ObjectStoreClient, user)
+	log.Printf("Starting Signup")
+	userappid, insertErr := dbmaster.TransactionCreateUser(c, Client, ObjectStoreClient, user)
 	if insertErr != nil {
 		msg := fmt.Sprintf("User Details were not Saved")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": msg})
 		return
 	}
 	defer cancel()
-	c.JSON(http.StatusOK, userappid)
+	inserteduser, err := dbmaster.GetUser(Client, userappid)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"status": err.Error()})
+	} else {
+		c.JSON(http.StatusOK, gin.H{"user": inserteduser})
+	}
+	// c.JSON(http.StatusOK, userappid)
 
 }
 

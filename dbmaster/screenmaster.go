@@ -109,3 +109,38 @@ func UpdateScreen(ctx context.Context, client *mongo.Client, userID string, scre
 	log.Printf("Documents updated: %v\n", result.ModifiedCount)
 	return nil
 }
+
+func DeleteScreen(ctx context.Context, client *mongo.Client, userID string, screenID string) error {
+	userSystemname := common.ExtractUserSystemIdentifier(userID)
+	screenCollection := client.Database(userSystemname).Collection("screen")
+	userdBname := common.ExtractUserSystemIdentifier(userID)
+	plalistCollection := client.Database(userdBname).Collection("plalist")
+
+	objectId, err := primitive.ObjectIDFromHex(screenID)
+	if err != nil {
+		return err
+	}
+	filter := bson.D{{"_id", objectId}}
+	result, err := screenCollection.DeleteOne(ctx, filter)
+	if err != nil {
+		return err
+	}
+	log.Printf("Number of documents deleted from Screens: %d\n", result.DeletedCount)
+	// Create the update filter and update document
+    playlistfilter := bson.M{}
+    playlistupdate := bson.M{
+        "$pull": bson.M{
+            "deviceblock": bson.M{
+                "deviceid": objectId,
+            },
+        },
+    }
+
+    // Perform the update operation
+    playlistdeleteresult, err := plalistCollection.UpdateMany(ctx, playlistfilter, playlistupdate)
+    if err != nil {
+        log.Fatal(err)
+    }
+	log.Printf("Number of documents deleted from Plalist: %d\n", playlistdeleteresult.ModifiedCount)
+	return nil
+}
