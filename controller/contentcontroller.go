@@ -64,3 +64,20 @@ func GetContentbyIDController(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"content": user})
 	}
 }
+
+func DeleteContentbyIDController(c *gin.Context) {
+	userid := c.GetHeader("userid")
+	value, ifexists := c.Get("uid")
+	if ifexists == true {
+		log.Printf("%s", value)
+	} else {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "Invalid User Id In Token"})
+	}
+	contentID := c.Params.ByName("id")
+	err := dbmaster.DeleteContent(c, Client, userid, contentID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"status": err.Error()})
+	} else {
+		c.JSON(http.StatusOK, gin.H{"status": "Deleted"})
+	}
+}

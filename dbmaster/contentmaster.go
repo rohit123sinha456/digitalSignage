@@ -61,5 +61,44 @@ func ReadOneContent(ctx context.Context, client *mongo.Client, userID string, co
 	return result, nil
 }
 
+func DeleteContent(ctx context.Context, client *mongo.Client, userID string, contentId string) error {
+	userSystemname := common.ExtractUserSystemIdentifier(userID)
+	contentCollection := client.Database(userSystemname).Collection("content")
+	userdBname := common.ExtractUserSystemIdentifier(userID)
+	plalistCollection := client.Database(userdBname).Collection("playlist")
+
+	objectId, err := primitive.ObjectIDFromHex(contentId)
+	if err != nil {
+		return err
+	}
+	filter := bson.D{{"_id", objectId}}
+	result, err := contentCollection.DeleteOne(ctx, filter)
+	if err != nil {
+		return err
+	}
+	log.Printf("Number of documents deleted from Content: %d\n", result.DeletedCount)
+	//db.playlist.updateMany({"deviceblock.displayblock.imagelist":{$elemMatch:{imageid: ObjectId('6683a8bca0cf1a28f6edddd3')}}},{$pull:{"deviceblock.$[].displayblock.$[].imagelist":{imageid:ObjectId('6683a8bca0cf1a28f6edddd3')}}})
+	contentfilter := bson.M{
+        "deviceblock.displayblock.imagelist": bson.M{
+            "$elemMatch": bson.M{
+                "imageid": objectId,
+            },
+        },
+    }
+    contentupdate := bson.M{
+        "$pull": bson.M{
+            "deviceblock.$[].displayblock.$[].imagelist": bson.M{
+                "imageid": objectId,
+            },
+        },
+    }
+
+    // Perform the update operation
+    playlistdeleteresult, err := plalistCollection.UpdateMany(ctx, contentfilter, contentupdate)
+    if err != nil {
+        return err
+    }
+	log.Printf("Number of Images deleted from Plalist: %d\n", playlistdeleteresult.ModifiedCount)
+	return nil
+}
 // func UpdateContent() {}
-// func DeleteContent() {}

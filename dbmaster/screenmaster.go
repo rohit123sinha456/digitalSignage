@@ -114,7 +114,7 @@ func DeleteScreen(ctx context.Context, client *mongo.Client, userID string, scre
 	userSystemname := common.ExtractUserSystemIdentifier(userID)
 	screenCollection := client.Database(userSystemname).Collection("screen")
 	userdBname := common.ExtractUserSystemIdentifier(userID)
-	plalistCollection := client.Database(userdBname).Collection("plalist")
+	plalistCollection := client.Database(userdBname).Collection("playlist")
 
 	objectId, err := primitive.ObjectIDFromHex(screenID)
 	if err != nil {
@@ -126,8 +126,14 @@ func DeleteScreen(ctx context.Context, client *mongo.Client, userID string, scre
 		return err
 	}
 	log.Printf("Number of documents deleted from Screens: %d\n", result.DeletedCount)
-	// Create the update filter and update document
-    playlistfilter := bson.M{}
+	// db.playlist.updateMany({deviceblock:{$elemMatch:{deviceid:ObjectId('6683a8e6a0cf1a28f6edddd7')}}},{$pull:{deviceblock:{deviceid: ObjectId('6683a8e6a0cf1a28f6edddd7')}}})
+	playlistfilter := bson.M{
+        "deviceblock": bson.M{
+            "$elemMatch": bson.M{
+                "deviceid": objectId,
+            },
+        },
+    }
     playlistupdate := bson.M{
         "$pull": bson.M{
             "deviceblock": bson.M{
@@ -139,8 +145,8 @@ func DeleteScreen(ctx context.Context, client *mongo.Client, userID string, scre
     // Perform the update operation
     playlistdeleteresult, err := plalistCollection.UpdateMany(ctx, playlistfilter, playlistupdate)
     if err != nil {
-        log.Fatal(err)
+        return err
     }
-	log.Printf("Number of documents deleted from Plalist: %d\n", playlistdeleteresult.ModifiedCount)
+	log.Printf("Number of Screens deleted from Plalist: %d\n", playlistdeleteresult.ModifiedCount)
 	return nil
 }
