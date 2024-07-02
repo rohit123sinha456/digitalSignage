@@ -12,6 +12,12 @@ import (
 func CreateContentController(c *gin.Context) {
 	var requestjsonvar DataModel.Content
 	userid := c.GetHeader("userid")
+	value, ifexists := c.Get("uid")
+	if ifexists == true {
+		log.Printf("%s", value)
+	} else {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "Invalid User Id In Token"})
+	}
 	log.Printf("%+v", userid)
 	reqerr := c.Bind(&requestjsonvar)
 	log.Printf("%+v", requestjsonvar)
@@ -29,6 +35,12 @@ func CreateContentController(c *gin.Context) {
 func ReadContentController(c *gin.Context) {
 	var contentarray []DataModel.Content
 	userid := c.GetHeader("userid")
+	value, ifexists := c.Get("uid")
+	if ifexists == true {
+		log.Printf("%s", value)
+	} else {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "Invalid User Id In Token"})
+	}
 	contentarray, err := dbmaster.ReadContent(c, Client, userid)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"status": err.Error()})
@@ -38,6 +50,12 @@ func ReadContentController(c *gin.Context) {
 
 func GetContentbyIDController(c *gin.Context) {
 	userid := c.GetHeader("userid")
+	value, ifexists := c.Get("uid")
+	if ifexists == true {
+		log.Printf("%s", value)
+	} else {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "Invalid User Id In Token"})
+	}
 	contentID := c.Params.ByName("id")
 	user, err := dbmaster.ReadOneContent(c, Client, userid, contentID)
 	if err != nil {

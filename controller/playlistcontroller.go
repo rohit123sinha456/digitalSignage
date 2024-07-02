@@ -16,7 +16,12 @@ type PlayPlaylistRequestjson struct {
 func PlayPlaylistController(c *gin.Context) {
 	var requestjsonvar PlayPlaylistRequestjson
 	Userid := c.GetHeader("userid")
-
+	value, ifexists := c.Get("uid")
+	if ifexists == true {
+		log.Printf("%s", value)
+	} else {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "Invalid User Id In Token"})
+	}
 	reqerr := c.Bind(&requestjsonvar)
 	log.Printf("%+v", requestjsonvar)
 	if reqerr != nil {
@@ -33,6 +38,12 @@ func PlayPlaylistController(c *gin.Context) {
 func CreatePlaylist(c *gin.Context) {
 	var playlistjson DataModel.Playlist
 	Userid := c.GetHeader("userid")
+	value, ifexists := c.Get("uid")
+	if ifexists == true {
+		log.Printf("%s", value)
+	} else {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "Invalid User Id In Token"})
+	}
 	reqerr := c.Bind(&playlistjson)
 	log.Printf("%+v", playlistjson)
 	if reqerr != nil {
@@ -49,6 +60,12 @@ func CreatePlaylist(c *gin.Context) {
 func ReadPlaylistController(c *gin.Context) {
 	var contentarray []DataModel.Playlist
 	userid := c.GetHeader("userid")
+	value, ifexists := c.Get("uid")
+	if ifexists == true {
+		log.Printf("%s", value)
+	} else {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "Invalid User Id In Token"})
+	}
 	contentarray, err := dbmaster.ReadPlaylist(c, Client, userid)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"status": err.Error()})
@@ -58,6 +75,12 @@ func ReadPlaylistController(c *gin.Context) {
 
 func GetPlaylistbyIDController(c *gin.Context) {
 	userid := c.GetHeader("userid")
+	value, ifexists := c.Get("uid")
+	if ifexists == true {
+		log.Printf("%s", value)
+	} else {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "Invalid User Id In Token"})
+	}
 	playlistId := c.Params.ByName("id")
 	user, err := dbmaster.GetPlaylist(c, Client, userid, playlistId)
 	if err != nil {
@@ -70,6 +93,12 @@ func GetPlaylistbyIDController(c *gin.Context) {
 func UpdatePlaylistbyIDController(c *gin.Context) {
 	var updatejson DataModel.UpdatePlaylistRequest
 	userid := c.GetHeader("userid")
+	value, ifexists := c.Get("uid")
+	if ifexists == true {
+		log.Printf("%s", value)
+	} else {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "Invalid User Id In Token"})
+	}
 	reqerr := c.Bind(&updatejson)
 	if reqerr != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"status": reqerr.Error()})

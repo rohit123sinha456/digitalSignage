@@ -16,14 +16,12 @@ var private *gin.RouterGroup
 
 func SetupRouter() {
 	R = gin.Default()
-	config := cors.DefaultConfig()
-	// config.AllowOrigins = []string{"*"}
-	config.AllowAllOrigins = true
-	// R.Use(cors.Default())
-	R.Use(cors.New(config))
+	R.Use(cors.Default())
 	private = R.Group("/api")
 	private.Use(middleware.Authenticate())
+	// private.Use(middleware.CORSMiddleware())
 	public = R.Group("/api/public")
+	// public.Use(middleware.CORSMiddleware())
 	Client := dbmaster.ConnectDB()
 	ObjectStoreClient := objectstore.ConnectObjectStore()
 	controller.SetupUserController(Client, ObjectStoreClient)
@@ -37,6 +35,8 @@ func UserRouter() { //Done
 	// R.POST("/user", controller.CreateNewUserController)
 	public.POST("users/signup", controller.Signup) // This will go to Admin Section
 	public.POST("users/login", controller.Login)
+	private.POST("users/logout", controller.Logout)
+
 }
 
 func AuthRoutes() {
@@ -68,7 +68,8 @@ func ContentListRouter() {
 }
 
 func ScreenRouter() { //Done
-	ch := make(chan DataModel.EventStreamRequest)
+	myMap := make(map[string]chan DataModel.EventStreamRequest)
+	// ch := make(chan DataModel.EventStreamRequest)
 	private.POST("/screen", controller.CreateScreenController)
 	private.GET("/screen", controller.ReadScreenController)
 	private.GET("/screen/:id", controller.GetScreenbyIDController)
@@ -76,9 +77,19 @@ func ScreenRouter() { //Done
 
 	private.POST("/event-stream/:id", func(c *gin.Context) {
 		screencode := c.Params.ByName("id")
-		controller.HandleEventStreamPost(c, ch, screencode)
+		_, ok := myMap[screencode]
+		if !ok {
+			myMap[screencode] = make(chan DataModel.EventStreamRequest)
+		}
+		controller.HandleEventStreamPost(c, myMap[screencode], screencode)
+		delete(myMap, screencode)
 	})
 	public.GET("/event-stream/:id", middleware.HeadersMiddleware(), func(c *gin.Context) {
-		controller.HandleEventStreamGet(c, ch)
+		screencode := c.Params.ByName("id")
+		_, ok := myMap[screencode]
+		if !ok {
+			myMap[screencode] = make(chan DataModel.EventStreamRequest)
+		}
+		controller.HandleEventStreamGet(c, myMap[screencode])
 	})
 }

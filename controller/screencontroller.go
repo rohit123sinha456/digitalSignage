@@ -18,6 +18,12 @@ import (
 func CreateScreenController(c *gin.Context) {
 	var requestjsonvar DataModel.Screen
 	userid := c.GetHeader("userid")
+	value, ifexists := c.Get("uid")
+	if ifexists == true {
+		log.Printf("%s", value)
+	} else {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "Invalid User Id In Token"})
+	}
 	reqerr := c.Bind(&requestjsonvar)
 	log.Printf("%+v", requestjsonvar)
 	if reqerr != nil {
@@ -34,6 +40,12 @@ func CreateScreenController(c *gin.Context) {
 func ReadScreenController(c *gin.Context) {
 	var contentarray []DataModel.Screen
 	userid := c.GetHeader("userid")
+	value, ifexists := c.Get("uid")
+	if ifexists == true {
+		log.Printf("%s", value)
+	} else {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "Invalid User Id In Token"})
+	}
 	contentarray, err := dbmaster.ReadScreen(c, Client, userid)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"status": err.Error()})
@@ -43,6 +55,12 @@ func ReadScreenController(c *gin.Context) {
 
 func GetScreenbyIDController(c *gin.Context) {
 	userid := c.GetHeader("userid")
+	value, ifexists := c.Get("uid")
+	if ifexists == true {
+		log.Printf("%s", value)
+	} else {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "Invalid User Id In Token"})
+	}
 	contentID := c.Params.ByName("id")
 	user, err := dbmaster.ReadOneScreen(c, Client, userid, contentID)
 	if err != nil {
@@ -55,6 +73,12 @@ func GetScreenbyIDController(c *gin.Context) {
 func UpdateScreenbyIDController(c *gin.Context) {
 	var requestjsonvar []DataModel.ScreenBlock
 	userid := c.GetHeader("userid")
+	value, ifexists := c.Get("uid")
+	if ifexists == true {
+		log.Printf("%s", value)
+	} else {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "Invalid User Id In Token"})
+	}
 	screenID := c.Params.ByName("id")
 	reqerr := c.Bind(&requestjsonvar)
 	log.Printf("%+v", requestjsonvar)
@@ -74,6 +98,12 @@ func HandleEventStreamPost(c *gin.Context, ch chan DataModel.EventStreamRequest,
 	var userinfo DataModel.UserSystemIdentifeir
 	coll := Client.Database("user").Collection("userSystemInfo")
 	userid := c.GetHeader("userid")
+	value, ifexists := c.Get("uid")
+	if ifexists == true {
+		log.Printf("%s", value)
+	} else {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "Invalid User Id In Token"})
+	}
 	filter := bson.D{{"userid", userid}}
 	err := coll.FindOne(c, filter).Decode(&userinfo)
 	if err != nil {

@@ -132,6 +132,8 @@ func Signup(c *gin.Context) {
 
 }
 
+
+
 func Login(c *gin.Context) {
 	var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
 	var user DataModel.User
@@ -160,7 +162,7 @@ func Login(c *gin.Context) {
 	if foundUser.Email == nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "user not found"})
 	}
-	token, refreshToken, _ := helper.GenerateAllTokens(*foundUser.Email, *foundUser.First_name, *foundUser.Last_name, *foundUser.User_type, foundUser.User_id)
+	token, refreshToken, _ := helper.GenerateAllTokens(*foundUser.Email, *foundUser.First_name, *foundUser.Last_name, *foundUser.User_type, foundUser.UserID)
 	helper.UpdateAllTokens(token, refreshToken, foundUser.User_id)
 	err = userCollection.FindOne(ctx, bson.M{"user_id": foundUser.User_id}).Decode(&foundUser)
 
@@ -170,4 +172,23 @@ func Login(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, foundUser)
 
+}
+
+
+func Logout(c * gin.Context){
+	coll := Client.Database("user").Collection("userData")
+	userid := c.GetHeader("userid")
+	value, ifexists := c.Get("uid")
+	if ifexists == true {
+		log.Printf("%s", value)
+	} else {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "Invalid User Id In Token"})
+	}
+	filter := bson.D{{"userid", userid}}
+	update := bson.D{{"$set", bson.D{{"token", "NoStringsAttached"},{"refresh_token","NoRefreshToken"}}}}
+	_, err := coll.UpdateOne(c, filter, update)
+	if err != nil {
+		panic(err)
+	}
+	c.JSON(http.StatusOK, "User Logged Out")
 }

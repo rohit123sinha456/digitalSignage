@@ -12,6 +12,12 @@ import (
 func CreateContentListController(c *gin.Context) {
 	var requestjsonvar DataModel.ContentList
 	userid := c.GetHeader("userid")
+	value, ifexists := c.Get("uid")
+	if ifexists == true {
+		log.Printf("%s", value)
+	} else {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "Invalid User Id In Token"})
+	}
 	reqerr := c.Bind(&requestjsonvar)
 	log.Printf("%+v", requestjsonvar)
 	log.Printf("Content Block")
@@ -29,6 +35,12 @@ func CreateContentListController(c *gin.Context) {
 func ReadContentListController(c *gin.Context) {
 	var contentarray []DataModel.ContentList
 	userid := c.GetHeader("userid")
+	value, ifexists := c.Get("uid")
+	if ifexists == true {
+		log.Printf("%s", value)
+	} else {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "Invalid User Id In Token"})
+	}
 	contentarray, err := dbmaster.ReadContentList(c, Client, userid)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"status": err.Error()})
