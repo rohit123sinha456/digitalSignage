@@ -8,16 +8,16 @@ import (
 
 type User struct {
 	ID            primitive.ObjectID `bson:"_id"`
-	Name          string             `bson:"name,omitempty"`
+	// Name          string             `bson:"name,omitempty"`
 	UserID        string             `bson:"userid,omitempty"`
 	Devices       []Device           `bson:"devices,omitempty"`
-	First_name    *string            `json:"first_name" validate:"required,min=2,max=100"`
-	Last_name     *string            `json:"last_name" validate:"required,min=2,max=100"`
+	First_name    *string            `json:"first_name,omitempty"`
+	Last_name     *string            `json:"last_name,omitempty"`
 	Password      *string            `json:"Password" validate:"required,min=6"`
 	Email         *string            `json:"email" validate:"email,required"`
 	Phone         *string            `json:"phone" validate:"required"`
 	Token         *string            `json:"token"`
-	User_type     *string            `json:"user_type" validate:"required,eq=ADMIN|eq=USER"`
+	User_type     *string            `json:"user_type,omitempty"`
 	Refresh_token *string            `json:"refresh_token"`
 	Created_at    time.Time          `json:"created_at"`
 	Updated_at    time.Time          `json:"updated_at"`

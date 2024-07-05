@@ -120,7 +120,7 @@ func Signup(c *gin.Context) {
 	user.Updated_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
 	user.ID = primitive.NewObjectID()
 	user.User_id = user.ID.Hex()
-	token, refreshToken, _ := helper.GenerateAllTokens(*user.Email, *user.First_name, *user.Last_name, *user.User_type, *&user.User_id)
+	token, refreshToken, _ := helper.GenerateAllTokens(*user.Email, *&user.User_id)
 	user.Token = &token
 	user.Refresh_token = &refreshToken
 
@@ -137,6 +137,7 @@ func Signup(c *gin.Context) {
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"status": err.Error()})
 	} else {
+		inserteduser.Password = nil
 		c.JSON(http.StatusOK, gin.H{"user": inserteduser})
 	}
 	// c.JSON(http.StatusOK, userappid)
@@ -173,7 +174,7 @@ func Login(c *gin.Context) {
 	if foundUser.Email == nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "user not found"})
 	}
-	token, refreshToken, _ := helper.GenerateAllTokens(*foundUser.Email, *foundUser.First_name, *foundUser.Last_name, *foundUser.User_type, foundUser.UserID)
+	token, refreshToken, _ := helper.GenerateAllTokens(*foundUser.Email,foundUser.UserID)
 	helper.UpdateAllTokens(token, refreshToken, foundUser.User_id)
 	err = userCollection.FindOne(ctx, bson.M{"user_id": foundUser.User_id}).Decode(&foundUser)
 
@@ -181,6 +182,7 @@ func Login(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+	foundUser.Password = nil
 	c.JSON(http.StatusOK, foundUser)
 
 }

@@ -180,6 +180,7 @@ This means B1 will have a playlist and B2 will have a static image
 - delete db and minio folder
 - adjust the env file 
 - docker compose build
+- docker stack rm dsignage
 - docker compose up -d
 - check all services available
 - docker compose down

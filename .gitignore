@@ -2,3 +2,4 @@ src/env
 db/data
 minio/
 .env
+*.postman_collection
