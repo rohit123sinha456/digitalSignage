@@ -16,7 +16,10 @@ var private *gin.RouterGroup
 
 func SetupRouter() {
 	R = gin.Default()
-	R.Use(cors.Default())
+	R.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"*"},
+		AllowMethods:     []string{"*"},
+		AllowHeaders:     []string{"*"},}))
 	private = R.Group("/api")
 	private.Use(middleware.Authenticate())
 	// private.Use(middleware.CORSMiddleware())
