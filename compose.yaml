@@ -6,6 +6,7 @@ services:
       - "15672:15672"
     volumes:
       - ./rabbitmq/data:/var/lib/rabbitmq
+      - ./rabbitmq/config:/etc/rabbitmq
     networks:
       - back-tier
 
