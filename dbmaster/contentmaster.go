@@ -3,12 +3,15 @@ package dbmaster
 import (
 	"context"
 	"log"
-
+	"mime/multipart"
 	"github.com/rohit123sinha456/digitalSignage/common"
 	DataModel "github.com/rohit123sinha456/digitalSignage/model"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"github.com/minio/minio-go/v7"
+	"github.com/rohit123sinha456/digitalSignage/objectstore"
+
 )
 
 func CreateContent(ctx context.Context, client *mongo.Client, userID string, content DataModel.Content) (string, error) {
@@ -101,4 +104,18 @@ func DeleteContent(ctx context.Context, client *mongo.Client, userID string, con
 	log.Printf("Number of Images deleted from Plalist: %d\n", playlistdeleteresult.ModifiedCount)
 	return nil
 }
+
+func UploadContent(ctx context.Context, objectStoreClient *minio.Client, userID string,filedata *multipart.FileHeader) error {
+	userBucketname := common.CreateBucketName(userID)
+	log.Printf("Uploading Content")
+	uploaderr := objectstore.StoreFile(ctx, objectStoreClient, userBucketname,filedata)
+	if uploaderr != nil {
+		return uploaderr
+	}
+	log.Printf("Successfull Content Uploaded contentmaster")
+	return nil
+}
+
+
+
 // func UpdateContent() {}

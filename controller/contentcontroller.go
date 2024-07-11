@@ -81,3 +81,27 @@ func DeleteContentbyIDController(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "Deleted"})
 	}
 }
+
+func UploadContentController(c *gin.Context) {
+	userid := c.GetHeader("userid")
+	value, ifexists := c.Get("uid")
+	if ifexists == true {
+		log.Printf("%s", value)
+	} else {
+		log.Printf("%s", value)
+		c.JSON(http.StatusBadRequest, gin.H{"status": "Invalid User Id In Token"})
+	}
+	file, err := c.FormFile("fileUpload")
+
+    if err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"statuses": err.Error()})
+		return
+    }
+
+	uploaderr := dbmaster.UploadContent(c,ObjectStoreClient,userid,file)
+	if uploaderr != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"status": err.Error()})
+		return
+    }
+	c.JSON(http.StatusOK, gin.H{"status": "Uploaded"})
+}
