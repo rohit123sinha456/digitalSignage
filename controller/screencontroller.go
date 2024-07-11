@@ -14,6 +14,9 @@ import (
 // type EventStreamRequest struct {
 // 	Message string `form:"message" json:"message" binding:"required,max=100"`
 // }
+type EventStreamPostRequest struct {
+	Screenmongoid string  `json:"screenmongoid"`
+}
 
 func CreateScreenController(c *gin.Context) {
 	var requestjsonvar DataModel.Screen
@@ -114,6 +117,8 @@ func DeleteScreenbyIDController(c *gin.Context) {
 func HandleEventStreamPost(c *gin.Context, ch chan DataModel.EventStreamRequest, screencode string) {
 	var result DataModel.EventStreamRequest
 	var userinfo DataModel.UserSystemIdentifeir
+	var requestbody EventStreamPostRequest
+
 	coll := Client.Database("user").Collection("userSystemInfo")
 	userid := c.GetHeader("userid")
 	value, ifexists := c.Get("uid")
@@ -122,18 +127,29 @@ func HandleEventStreamPost(c *gin.Context, ch chan DataModel.EventStreamRequest,
 	} else {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "Invalid User Id In Token"})
 	}
+	reqerr := c.Bind(&requestbody)
+	log.Printf("%+v", requestbody)
+	if reqerr != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"status": reqerr.Error()})
+	}
+
 	filter := bson.D{{"userid", userid}}
 	err := coll.FindOne(c, filter).Decode(&userinfo)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"status": err.Error()})
 		return
 	}
+
 	result.Screencode = screencode
 	result.Userinfo = userinfo
-	if err := c.ShouldBind(&result); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"status": err.Error()})
-		return
-	}
+	result.ScreenMongoID = requestbody.Screenmongoid
+
+	log.Printf("%+v", result)
+	// if err := c.Bind(&result); err != nil {
+	// 	log.Fatal(err)
+	// 	c.JSON(http.StatusBadRequest, gin.H{"Bind Status": err.Error()})
+	// 	return
+	// }
 	ch <- result
 	c.JSON(http.StatusOK, gin.H{"status": "Updated"})
 	return

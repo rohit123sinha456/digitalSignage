@@ -1,6 +1,8 @@
 package DataModel
+// import "go.mongodb.org/mongo-driver/bson/primitive"
 
 type EventStreamRequest struct {
-	Screencode string               `form:"screencode" json:"message" binding:"required,max=100"`
-	Userinfo   UserSystemIdentifeir `json:"userinfo"`
+	Screencode string               `bson:"screencode"`
+	Userinfo   UserSystemIdentifeir `bson:"userinfo"`
+	ScreenMongoID string `bson:"screenmongoid"`
 }
