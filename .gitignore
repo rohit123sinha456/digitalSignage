@@ -1,5 +1,6 @@
 src/env
 db/data
 minio/
+rabbitmq/
 .env
 *.postman_collection
