@@ -98,10 +98,10 @@ func UploadContentController(c *gin.Context) {
 		return
     }
 
-	uploaderr := dbmaster.UploadContent(c,ObjectStoreClient,userid,file)
+	objecturl,uploaderr := dbmaster.UploadContent(c,ObjectStoreClient,userid,file)
 	if uploaderr != nil {
         c.JSON(http.StatusBadRequest, gin.H{"status": err.Error()})
 		return
     }
-	c.JSON(http.StatusOK, gin.H{"status": "Uploaded"})
+	c.JSON(http.StatusOK, gin.H{"URL": objecturl})
 }

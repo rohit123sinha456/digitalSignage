@@ -10,6 +10,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"github.com/minio/minio-go/v7"
+	"github.com/rohit123sinha456/digitalSignage/config"
 	"github.com/rohit123sinha456/digitalSignage/objectstore"
 
 )
@@ -105,15 +106,17 @@ func DeleteContent(ctx context.Context, client *mongo.Client, userID string, con
 	return nil
 }
 
-func UploadContent(ctx context.Context, objectStoreClient *minio.Client, userID string,filedata *multipart.FileHeader) error {
+func UploadContent(ctx context.Context, objectStoreClient *minio.Client, userID string,filedata *multipart.FileHeader) (string,error) {
 	userBucketname := common.CreateBucketName(userID)
 	log.Printf("Uploading Content")
 	uploaderr := objectstore.StoreFile(ctx, objectStoreClient, userBucketname,filedata)
 	if uploaderr != nil {
-		return uploaderr
+		return "",uploaderr
 	}
+	sourceurl := config.GetEnvbyKey("OBJECTSTOREURL")
+	objecturl := sourceurl + userBucketname + "/"+ filedata.Filename
 	log.Printf("Successfull Content Uploaded contentmaster")
-	return nil
+	return objecturl,nil
 }
 
 
