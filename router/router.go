@@ -53,6 +53,9 @@ func PlaylistRouter() { // Done
 	private.GET("/playlist", controller.ReadPlaylistController)            // Read (all)
 	private.GET("/playlist/:id", controller.GetPlaylistbyIDController)     // Read (Specific)
 	private.POST("/playlist/:id", controller.UpdatePlaylistbyIDController) // Update (Specific)
+	private.POST("/playlist/duplicate/:id", controller.DuplicatePlaylistbyIDController) // Duplicate (Specific ID)
+	private.DELETE("/playlist/:id", controller.DeletePlaylistbyIDController) // Delete (Specific)
+	
 
 }
 

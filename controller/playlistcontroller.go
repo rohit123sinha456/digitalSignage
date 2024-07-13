@@ -90,6 +90,40 @@ func GetPlaylistbyIDController(c *gin.Context) {
 	}
 }
 
+func DuplicatePlaylistbyIDController(c *gin.Context) {
+	userid := c.GetHeader("userid")
+	value, ifexists := c.Get("uid")
+	if ifexists == true {
+		log.Printf("%s", value)
+	} else {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "Invalid User Id In Token"})
+	}
+	playlistId := c.Params.ByName("id")
+	user, err := dbmaster.DuplicatePlaylist(c, Client, userid, playlistId)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"status": err.Error()})
+	} else {
+		c.JSON(http.StatusOK, gin.H{"content": user})
+	}
+}
+
+func DeletePlaylistbyIDController(c *gin.Context) {
+	userid := c.GetHeader("userid")
+	value, ifexists := c.Get("uid")
+	if ifexists == true {
+		log.Printf("%s", value)
+	} else {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "Invalid User Id In Token"})
+	}
+	playlistId := c.Params.ByName("id")
+	err := dbmaster.DeletePlaylist(c, Client, userid, playlistId)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"status": err.Error()})
+	} else {
+		c.JSON(http.StatusOK, gin.H{"status": "Successsfully Deleted PLaylist"})
+	}
+}
+
 func UpdatePlaylistbyIDController(c *gin.Context) {
 	var updatejson DataModel.UpdatePlaylistRequest
 	userid := c.GetHeader("userid")

@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"log"
 	"reflect"
-
+	"time"
 	"github.com/rohit123sinha456/digitalSignage/common"
 	DataModel "github.com/rohit123sinha456/digitalSignage/model"
 	"github.com/rohit123sinha456/digitalSignage/rabbitqueue"
@@ -28,6 +28,8 @@ func checkifimageexists(ctx context.Context, coll *mongo.Collection, contentlist
 }
 
 func CreatePlaylist(ctx context.Context, client *mongo.Client, userID string, playlist DataModel.Playlist) (DataModel.Playlist, error) {
+	now := time.Now()
+	playlist.CreatedAt = &now
 	playlist.ID = primitive.NewObjectID()
 	_, err := GetUser(client, userID)
 	if err != nil {
@@ -59,6 +61,9 @@ func UpdatePlaylist(ctx context.Context, client *mongo.Client, userID string, pl
 		fmt.Printf("%v\n", updatejson.DeviceBlock)
 
 	}
+	now := time.Now()
+	updateDoc["updatedAt"] = &now
+
 	filter := bson.D{{"_id", objectId}}
 	update := bson.M{"$set": updateDoc}
 	result, updateerr := coll.UpdateOne(ctx, filter, update)
@@ -84,6 +89,55 @@ func GetPlaylist(ctx context.Context, client *mongo.Client, userID string, playl
 	return result, nil
 }
 
+func DeletePlaylist(ctx context.Context, client *mongo.Client, userID string, playlistID string) error {
+	userSystemname := common.ExtractUserSystemIdentifier(userID)
+	coll := client.Database(userSystemname).Collection("playlist")
+	objectId, err := primitive.ObjectIDFromHex(playlistID)
+	if err != nil {
+		return err
+	}
+	filter := bson.D{{"_id", objectId}}
+	result, err := coll.DeleteOne(ctx, filter)
+	if err != nil {
+		return err
+	}
+	log.Printf("Number of documents deleted from Screens: %d\n", result.DeletedCount)
+	return nil
+}
+
+func DuplicatePlaylist(ctx context.Context, client *mongo.Client, userID string, playlistID string) (DataModel.Playlist, error) {
+	// Get playlst
+	var result DataModel.Playlist
+	userSystemname := common.ExtractUserSystemIdentifier(userID)
+	coll := client.Database(userSystemname).Collection("playlist")
+	objectId, err := primitive.ObjectIDFromHex(playlistID)
+	if err != nil {
+		return result, err
+	}
+	filter := bson.D{{"_id", objectId}}
+	err = coll.FindOne(ctx, filter).Decode(&result)
+	if err != nil {
+		return result, err
+	}
+
+	// duplicate playlist
+	now := time.Now()
+	result.CreatedAt = &now
+	result.UpdatedAt = nil
+	result.PlayedAt = nil
+	result.Isplaying = false
+
+	result.ID = primitive.NewObjectID()
+	_, inserterr := coll.InsertOne(ctx, result)
+	if inserterr != nil {
+		return result, inserterr
+	}
+	log.Printf("Created User Playlist")
+	return result, nil
+
+	return result, nil
+}
+
 func ReadPlaylist(ctx context.Context, client *mongo.Client, userID string) ([]DataModel.Playlist, error) {
 	var contentlistarray []DataModel.Playlist
 	userSystemname := common.ExtractUserSystemIdentifier(userID)
@@ -106,6 +160,7 @@ func ReadPlaylist(ctx context.Context, client *mongo.Client, userID string) ([]D
 }
 
 func PlayPlaylist(ctx context.Context, client *mongo.Client, userID string, playlistid string) error {
+	now := time.Now()
 	_, err := GetUser(client, userID)
 	if err != nil {
 		return err
@@ -121,6 +176,102 @@ func PlayPlaylist(ctx context.Context, client *mongo.Client, userID string, play
 	if err != nil {
 		return err
 	}
+	coll := client.Database(userdsystemname).Collection("playlist")
+	objectId, err := primitive.ObjectIDFromHex(playlistid)
+	if err != nil {
+		return err
+	}
+	stopcurrentplaylistfilter := bson.D{{"isplayling", true}}
+	stopcurrentplaylistupdate := bson.D{{"$set",bson.D{{"isplaying",false}}}}
+	stopresult, stopcurrentplaylistupdateerr := coll.UpdateOne(ctx, stopcurrentplaylistfilter, stopcurrentplaylistupdate)
+	if stopcurrentplaylistupdateerr != nil {
+		return stopcurrentplaylistupdateerr
+	}
+	fmt.Printf("Documents updated for stopping playlist: %v\n", stopresult.ModifiedCount)
+
+	playcurrentplaylistfilter := bson.D{{"_id", objectId}}
+	playcurrentplaylistupdate := bson.D{{"$set",bson.D{{"isplaying",true},{"playedAt",now}}}}
+	playresult, playcuurentplaylisterr := coll.UpdateOne(ctx, playcurrentplaylistfilter, playcurrentplaylistupdate)
+	if playcuurentplaylisterr != nil {
+		return playcuurentplaylisterr
+	}
+	fmt.Printf("Documents updated for playlist playlist: %v\n", playresult.ModifiedCount)
+	deviceIds,polerr := GetUniqueDeviceIds(ctx, client, userID, playlistid)
+	if polerr != nil {
+		return polerr
+	}
+	updatescreens := UpdateScreenCollection(ctx, client, userID, deviceIds, playlistid, playlist.Name)
+	if updatescreens != nil{
+		return updatescreens 
+	}
 	return nil
 
+}
+
+// Function to get unique device IDs from a playlist
+func GetUniqueDeviceIds(ctx context.Context, client *mongo.Client, userID string, playlistID string) ([]primitive.ObjectID, error) {
+	userSystemname := common.ExtractUserSystemIdentifier(userID)
+	coll := client.Database(userSystemname).Collection("playlist")
+
+	playlistObjectID, err := primitive.ObjectIDFromHex(playlistID)
+	if err != nil {
+		return nil, err
+	}
+
+	pipeline := mongo.Pipeline{
+		{{"$match", bson.D{{"_id", playlistObjectID}}}},
+		{{"$unwind", "$deviceblock"}},
+		{{"$group", bson.D{
+			{"_id", nil},
+			{"uniqueDeviceIds", bson.D{{"$addToSet", "$deviceblock.deviceid"}}},
+		}}},
+		{{"$project", bson.D{
+			{"_id", 0},
+			{"uniqueDeviceIds", 1},
+		}}},
+	}
+
+	cursor, err := coll.Aggregate(ctx, pipeline)
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+
+	var result []bson.M
+	if err = cursor.All(ctx, &result); err != nil {
+		return nil, err
+	}
+
+	if len(result) > 0 {
+		deviceIds := result[0]["uniqueDeviceIds"].(bson.A)
+		uniqueDeviceIds := make([]primitive.ObjectID, len(deviceIds))
+		for i, id := range deviceIds {
+			uniqueDeviceIds[i] = id.(primitive.ObjectID)
+		}
+		return uniqueDeviceIds, nil
+	}
+
+	return nil, nil
+}
+
+// Function to update the screen collection
+func UpdateScreenCollection(ctx context.Context, client *mongo.Client, userID string, deviceIDs []primitive.ObjectID, playlistID, playlistName string) error {
+	userSystemname := common.ExtractUserSystemIdentifier(userID)
+	coll := client.Database(userSystemname).Collection("screen")
+
+	filter := bson.M{"_id": bson.M{"$in": deviceIDs}}
+	update := bson.M{
+		"$set": bson.M{
+			"currentplaylistid":   playlistID,
+			"currentplaylistname": playlistName,
+		},
+	}
+
+	result, err := coll.UpdateMany(ctx, filter, update)
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("Documents updated: %v\n", result.ModifiedCount)
+	return nil
 }

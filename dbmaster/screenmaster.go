@@ -4,14 +4,20 @@ import (
 	"context"
 	"errors"
 	"log"
-
+	"time"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 
 	"github.com/rohit123sinha456/digitalSignage/common"
 	DataModel "github.com/rohit123sinha456/digitalSignage/model"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
+
 )
+type  ActivatePlaylistofScreen struct{
+	CurrentPlaylistName string  `bson:"playlistname,omitempty"`
+	CurrentPlaylistID primitive.ObjectID    `bson:"_id,omitempty"`
+}
 
 func checkifcontentlistexists(ctx context.Context, coll *mongo.Collection, screenblocks []DataModel.ScreenBlock) error {
 	log.Printf("Checking Contents")
@@ -35,7 +41,8 @@ func checkifcontentlistexists(ctx context.Context, coll *mongo.Collection, scree
 }
 
 func CreateScreen(ctx context.Context, client *mongo.Client, userID string, screendetails DataModel.Screen) (string, error) {
-
+	now := time.Now()
+	screendetails.CreatedAt = &now
 	screendetails.ID = primitive.NewObjectID()
 	userdBname := common.ExtractUserSystemIdentifier(userID)
 	coll := client.Database(userdBname).Collection("screen")
@@ -71,6 +78,7 @@ func ReadScreen(ctx context.Context, client *mongo.Client, userID string) ([]Dat
 
 func ReadOneScreen(ctx context.Context, client *mongo.Client, userID string, screenID string) (DataModel.Screen, error) {
 	var result DataModel.Screen
+	var activateplaylistofscreen []ActivatePlaylistofScreen
 	userSystemname := common.ExtractUserSystemIdentifier(userID)
 	coll := client.Database(userSystemname).Collection("screen")
 	objectId, err := primitive.ObjectIDFromHex(screenID)
@@ -82,6 +90,32 @@ func ReadOneScreen(ctx context.Context, client *mongo.Client, userID string, scr
 	if err != nil {
 		return result, err
 	}
+	//db.playlist.find({$and:[{isplaying:true},{deviceblock:{$elemMatch:{deviceid:ObjectId('6692d6b83a2f6303d4a3a330')}}}]},{_id:1,playlistname:1})
+	currentplaylistfilter := bson.D{
+		{"$and", bson.A{
+			bson.D{{"isplaying", true}},
+			bson.D{{"deviceblock", bson.D{{"$elemMatch", bson.D{{"deviceid", objectId}}}}}},
+		}},
+	}
+
+	currentplaylistprojection := bson.D{
+		{"_id", 1},
+		{"playlistname", 1},
+	}
+
+	opts := options.Find().SetProjection(currentplaylistprojection)
+	playlistcoll := client.Database(userSystemname).Collection("playlist")
+	cursor, err := playlistcoll.Find(context.TODO(), currentplaylistfilter, opts)
+	if err != nil {
+		panic(err)
+	}
+	if err = cursor.All(context.TODO(), &activateplaylistofscreen); err != nil {
+		panic(err)
+	}
+	log.Printf("Feting User details")
+	log.Printf("%v",activateplaylistofscreen)
+	result.CurrentPlaylistName = activateplaylistofscreen[0].CurrentPlaylistName
+	result.CurrentPlaylistID = activateplaylistofscreen[0].CurrentPlaylistID
 	return result, nil
 }
 

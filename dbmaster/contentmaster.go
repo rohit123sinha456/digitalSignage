@@ -1,6 +1,7 @@
 package dbmaster
 
 import (
+	"time"
 	"context"
 	"log"
 	"mime/multipart"
@@ -16,6 +17,8 @@ import (
 )
 
 func CreateContent(ctx context.Context, client *mongo.Client, userID string, content DataModel.Content) (string, error) {
+	now := time.Now()
+	content.CreatedAt = &now
 	content.ID = primitive.NewObjectID()
 	userdBname := common.ExtractUserSystemIdentifier(userID)
 	coll := client.Database(userdBname).Collection("content")
