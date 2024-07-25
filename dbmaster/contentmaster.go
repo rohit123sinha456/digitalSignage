@@ -4,6 +4,8 @@ import (
 	"time"
 	"context"
 	"log"
+	"net/url"
+	"strings"
 	"mime/multipart"
 	"github.com/rohit123sinha456/digitalSignage/common"
 	DataModel "github.com/rohit123sinha456/digitalSignage/model"
@@ -117,7 +119,9 @@ func UploadContent(ctx context.Context, objectStoreClient *minio.Client, userID 
 		return "",uploaderr
 	}
 	sourceurl := config.GetEnvbyKey("OBJECTSTOREURL")
-	objecturl := sourceurl + userBucketname + "/"+ filedata.Filename
+	nospaces := strings.TrimSpace(filedata.Filename)
+	validfile := url.PathEscape(nospaces)
+	objecturl := sourceurl + userBucketname + "/"+ validfile
 	log.Printf("Successfull Content Uploaded contentmaster")
 	return objecturl,nil
 }
