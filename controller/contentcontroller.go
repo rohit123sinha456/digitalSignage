@@ -49,14 +49,8 @@ func ReadContentController(c *gin.Context) {
 }
 
 func GetContentbyIDController(c *gin.Context) {
-	userid := c.GetHeader("userid")
-	value, ifexists := c.Get("uid")
-	if ifexists == true {
-		log.Printf("%s", value)
-	} else {
-		c.JSON(http.StatusBadRequest, gin.H{"status": "Invalid User Id In Token"})
-	}
 	contentID := c.Params.ByName("id")
+	userid := c.Params.ByName("userid")
 	user, err := dbmaster.ReadOneContent(c, Client, userid, contentID)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"status": err.Error()})

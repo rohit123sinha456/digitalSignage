@@ -62,7 +62,7 @@ func PlaylistRouter() { // Done
 func ContentRouter() { // Done
 	private.POST("/content", controller.CreateContentController)     // create Content
 	private.GET("/content", controller.ReadContentController)        // Read (all)
-	private.GET("/content/:id", controller.GetContentbyIDController) // Read (Specific)
+	public.GET("/content/:userid/:id", controller.GetContentbyIDController) // Read (Specific) using public url
 	private.DELETE("/content/:id", controller.DeleteContentbyIDController) // Delete Content as well delete from playlist
 	private.POST("/uploadcontent", controller.UploadContentController) // Delete Content as well delete from playlist
 
