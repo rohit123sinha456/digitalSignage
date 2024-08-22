@@ -15,7 +15,7 @@ type Screen struct {
 	Location string             `bson:"location"`
 	CurrentPlaylistName string  `bson:"currentplaylistname,omitempty"`
 	CurrentPlaylistID primitive.ObjectID    `bson:"currentplaylistid,omitempty"`
-
+	// PlaylistList []primitive.ObjectID    `bson:"playlistlistid,omitempty"`
 	// Screenblock []ScreenBlock      `bson:"screenblock"`
 	Screenblock string `bson:"screenblock"`
 	Screencode  string `bson:"screencode"`

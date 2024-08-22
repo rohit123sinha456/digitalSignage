@@ -48,7 +48,8 @@ func AuthRoutes() {
 }
 
 func PlaylistRouter() { // Done
-	private.POST("/playplaylist", controller.PlayPlaylistController)
+	private.POST("/playplaylist", controller.PlayPlaylistController)		// PLay PLaylist to all registered screen
+	private.POST("/playplaylisttoscreen", controller.PlayPlaylisttoScreenController) // PLay PLaylist to single registered screen
 	private.POST("/playlist", controller.CreatePlaylist)                   // Create Playlist
 	private.GET("/playlist", controller.ReadPlaylistController)            // Read (all)
 	private.GET("/playlist/:id", controller.GetPlaylistbyIDController)     // Read (Specific)

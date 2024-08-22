@@ -2,10 +2,10 @@ import pika , sys, os
 
 # Set the connection parameters to connect to rabbit-server1 on port 5672
 # on the / virtual host using the username "guest" and password "guest"
-credentials = pika.PlainCredentials('DSU1187e3cc', 'password')
-parameters = pika.ConnectionParameters('91.108.110.157',
+credentials = pika.PlainCredentials('DSUe2e0464f', 'password')
+parameters = pika.ConnectionParameters('localhost',
                                        5672,
-                                       'DSUVHOST1187e3cc',
+                                       'DSUVHOSTe2e0464f',
                                        credentials)
 
 

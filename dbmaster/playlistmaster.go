@@ -89,6 +89,56 @@ func GetPlaylist(ctx context.Context, client *mongo.Client, userID string, playl
 	return result, nil
 }
 
+func GetPlaylistwithSingleScreenData(ctx context.Context, client *mongo.Client, userID string, playlistID string,screenID string) ([]DataModel.Playlist, error) {
+	var result []DataModel.Playlist
+	userSystemname := common.ExtractUserSystemIdentifier(userID)
+	coll := client.Database(userSystemname).Collection("playlist")
+	playlistobjectId, err := primitive.ObjectIDFromHex(playlistID)
+	if err != nil {
+		return result, err
+	}
+	screenobjectId, err := primitive.ObjectIDFromHex(screenID)
+	if err != nil {
+		return result, err
+	}
+
+	// Build the aggregation pipeline
+	//db.playlist.aggregate([{"$match": {"_id": ObjectId("6692d6e23a2f6303d4a3a331")}},{"$project": {"playlistname": 1,"createdAt": 1,"UpdatedAt": 1,"playedAt": 1,"isplaying": 1,"deviceblock": {"$filter": {"input":"$deviceblock","as": "block","cond": { "$eq": [ "$$block.deviceid", ObjectId("6692d6b83a2f6303d4a3a330") ] } } } } }]);
+    pipeline := mongo.Pipeline{
+        {{"$match", bson.D{{"_id", playlistobjectId}}}},
+        {{"$project", bson.D{
+            {"playlistname", 1},
+            {"createdAt", 1},
+            {"UpdatedAt", 1},
+            {"playedAt", 1},
+            {"isplaying", 1},
+            {"deviceblock", bson.D{
+                {"$filter", bson.D{
+                    {"input", "$deviceblock"},
+                    {"as", "block"},
+                    {"cond", bson.D{
+                        {"$eq", bson.A{"$$block.deviceid", screenobjectId}},
+                    }},
+                }},
+            }},
+        }}},
+    }
+    // Execute the aggregation
+    cursor, err := coll.Aggregate(ctx, pipeline)
+	if err != nil {
+		return result, err
+	}
+    defer cursor.Close(ctx)
+
+    // Iterate over the results
+    err = cursor.All(ctx, &result)
+	if err != nil {
+		return result, err
+	}
+	
+	return result, nil
+}
+
 func DeletePlaylist(ctx context.Context, client *mongo.Client, userID string, playlistID string) error {
 	userSystemname := common.ExtractUserSystemIdentifier(userID)
 	coll := client.Database(userSystemname).Collection("playlist")
@@ -200,6 +250,39 @@ func PlayPlaylist(ctx context.Context, client *mongo.Client, userID string, play
 	if polerr != nil {
 		return polerr
 	}
+	updatescreens := UpdateScreenCollection(ctx, client, userID, deviceIds, playlistid, playlist.Name)
+	if updatescreens != nil{
+		return updatescreens 
+	}
+	return nil
+
+}
+
+//Function to play playlist to a particular screen
+func PlayPlaylisttoScreen(ctx context.Context, client *mongo.Client, userID string, playlistid string, screenid string) error {
+	var playlist DataModel.Playlist
+	_, err := GetUser(client, userID)
+	if err != nil {
+		return err
+	}
+	uservHostname := common.CreatevHostName(userID)
+	userdsystemname := common.ExtractUserSystemIdentifier(userID)
+	playlistarr, err := GetPlaylistwithSingleScreenData(ctx, client, userID, playlistid,screenid)
+
+	if(len(playlistarr) == 1){
+		playlist = playlistarr[0]
+	} else {
+		return errors.New("Playlist for the screen doesn't exist")
+	}
+	log.Printf("%v",playlist)
+	rabbitqueue.Connect(userdsystemname, "password", uservHostname)
+	err = rabbitqueue.PublishMessage(ctx, playlist, uservHostname)
+	if err != nil {
+		return err
+	}
+
+	screenobjectId, err := primitive.ObjectIDFromHex(screenid)
+	deviceIds := []primitive.ObjectID{screenobjectId}
 	updatescreens := UpdateScreenCollection(ctx, client, userID, deviceIds, playlistid, playlist.Name)
 	if updatescreens != nil{
 		return updatescreens 

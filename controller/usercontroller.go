@@ -103,16 +103,8 @@ func Signup(c *gin.Context) {
 	password := HashPassword(*user.Password)
 	user.Password = &password
 
-	count, err = userCollection.CountDocuments(ctx, bson.M{"phone": user.Phone})
-	defer cancel()
-	if err != nil {
-		// log.Panic(err)
-		c.JSON(http.StatusInternalServerError, gin.H{"Error": "Error occured while fetching the phone number"})
-		return
-	}
-
 	if count > 0 {
-		c.JSON(http.StatusInternalServerError, gin.H{"Error": "The mentioned E-Mail or Phone Number already exists"})
+		c.JSON(http.StatusInternalServerError, gin.H{"Error": "The mentioned E-Mail already exists"})
 		return
 	}
 

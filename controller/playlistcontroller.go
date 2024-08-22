@@ -12,6 +12,11 @@ import (
 type PlayPlaylistRequestjson struct {
 	Playlistid string `bson:"playlistid"`
 }
+type PlayPlaylisttoScreenRequestjson struct {
+	Playlistid string `bson:"playlistid"`
+	Screenid string `bson:"screenidid"`
+}
+
 
 func PlayPlaylistController(c *gin.Context) {
 	var requestjsonvar PlayPlaylistRequestjson
@@ -34,6 +39,32 @@ func PlayPlaylistController(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "Successfully sent to Queue"})
 	}
 }
+
+// PlayPlaylisttoScreen
+func PlayPlaylisttoScreenController(c *gin.Context) {
+	var requestjsonvar PlayPlaylisttoScreenRequestjson
+	Userid := c.GetHeader("userid")
+	value, ifexists := c.Get("uid")
+	if ifexists == true {
+		log.Printf("%s", value)
+	} else {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "Invalid User Id In Token"})
+	}
+	reqerr := c.Bind(&requestjsonvar)
+	log.Printf("%+v", requestjsonvar)
+	if reqerr != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"status": reqerr.Error()})
+	}
+	err := dbmaster.PlayPlaylisttoScreen(c, Client, Userid, requestjsonvar.Playlistid,requestjsonvar.Screenid)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"status": err.Error()})
+	} else {
+		c.JSON(http.StatusOK, gin.H{"status": "Successfully sent to Queue"})
+	}
+}
+
+
+
 
 func CreatePlaylist(c *gin.Context) {
 	var playlistjson DataModel.Playlist
