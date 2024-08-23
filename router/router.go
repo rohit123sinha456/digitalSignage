@@ -68,7 +68,8 @@ func ContentRouter() { // Done
 	public.GET("/content/:userid/:id", controller.GetContentbyIDController) // Read (Specific) using public url
 	private.POST("/content/:id", controller.UpdateContentbyIDController) // working
 	private.DELETE("/content/:id", controller.DeleteContentbyIDController) // Delete Content as well delete from playlist
-	private.POST("/uploadcontent", controller.UploadContentController) // Delete Content as well delete from playlist
+	private.POST("/uploadcontent", controller.UploadContentController) // Upload single
+	private.POST("/uploadmultiplecontent", controller.UploadMultipleContentController) // Upload multiple
 
 }
 

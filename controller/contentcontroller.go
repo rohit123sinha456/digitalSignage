@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/rohit123sinha456/digitalSignage/dbmaster"
+	"github.com/rohit123sinha456/digitalSignage/common"
 	DataModel "github.com/rohit123sinha456/digitalSignage/model"
 )
 
@@ -122,4 +123,61 @@ func UploadContentController(c *gin.Context) {
 		return
     }
 	c.JSON(http.StatusOK, gin.H{"URL": objecturl})
+}
+
+func UploadMultipleContentController(c *gin.Context) {
+	
+	userid := c.GetHeader("userid")
+	value, ifexists := c.Get("uid")
+	if ifexists == true {
+		log.Printf("%s", value)
+	} else {
+		log.Printf("%s", value)
+		c.JSON(http.StatusBadRequest, gin.H{"status": "Invalid User Id In Token"})
+	}
+	
+	// Retrieve all files from form
+	form, _ := c.MultipartForm()
+	files := form.File["fileUpload"]
+	// files := c.Request.MultipartForm.File["fileUpload"]
+	if len(files) == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "No files uploaded"})
+		return
+	}
+
+	var uploadErrors []string
+	var creationErrors []string
+	var contentids []string
+
+	for _, file := range files {
+		var contentdata DataModel.Content
+		objecturl,uploaderr := dbmaster.UploadContent(c,ObjectStoreClient,userid,file)
+		if uploaderr != nil {
+			uploadErrors = append(uploadErrors, uploaderr.Error())
+		} else {
+			filetype := common.GetFileType(file.Filename)
+			contentdata.CName = file.Filename
+			contentdata.Link = objecturl
+			contentdata.DType = filetype
+			log.Printf("%s",filetype)
+			contentid, err := dbmaster.CreateContent(c, Client, userid, contentdata)
+			if err != nil {
+				creationErrors = append(creationErrors, err.Error())
+			} else {
+				contentids = append(contentids, contentid)
+			}
+		}
+	}
+
+	if len(uploadErrors) > 0 || len(creationErrors) > 0 {
+        // If there were any errors, respond with them
+        c.JSON(http.StatusBadRequest, gin.H{
+            "status":   "Some files failed to upload",
+            "uploaderrors":   uploadErrors,
+			"createerrors":   creationErrors,
+        })
+    } else {
+        // All files uploaded successfully
+        c.JSON(http.StatusOK, gin.H{"ids": contentids})
+    }
 }

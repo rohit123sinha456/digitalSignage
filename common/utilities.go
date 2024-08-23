@@ -1,6 +1,9 @@
 package common
 
-import "strings"
+import (
+    "path/filepath"
+    "strings"
+)
 
 // System Identifier is how the system Identified a User across
 func ExtractUserSystemIdentifier(userID string) string {
@@ -24,4 +27,27 @@ func CreateBucketName(userID string) string {
 	userdBname := strings.Join([]string{"dsu", "bucket", useridsplits[0]}, "")
 	return userdBname
 
+}
+
+func GetFileType(filename string) string {
+    ext := strings.ToLower(filepath.Ext(filename))
+    imageExtensions := map[string]bool{
+        ".jpeg": true,
+        ".jpg":  true,
+        ".webp": true,
+        ".png":  true,
+    }
+    videoExtensions := map[string]bool{
+        ".mp4": true,
+    }
+
+    if imageExtensions[ext] {
+        return "Image"
+    }
+
+    if videoExtensions[ext] {
+        return "Video"
+    }
+
+	return "Unknown"
 }
