@@ -5,23 +5,101 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"net/smtp"
 	"time"
-
+    "math/rand"
 	"github.com/gin-gonic/gin"
 	"github.com/minio/minio-go/v7"
 	"github.com/rohit123sinha456/digitalSignage/common"
 	"github.com/rohit123sinha456/digitalSignage/dbmaster"
 	helper "github.com/rohit123sinha456/digitalSignage/helper"
 	DataModel "github.com/rohit123sinha456/digitalSignage/model"
-
+	"github.com/rohit123sinha456/digitalSignage/config"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"golang.org/x/crypto/bcrypt"
 )
 
+
+type OTPDetails struct {
+    OTP        string
+    CreatedAt  time.Time
+}
+type ResetPasswordRequest struct {
+    Email       string `json:"email"`
+    OTP         string `json:"otp"`
+    NewPassword string `json:"new_password"`
+}
 var Client *mongo.Client
 var ObjectStoreClient *minio.Client
+var otps = make(map[string]OTPDetails) // Store OTPs with email as the key
+const otpExpirationDuration = 1 * time.Minute
+const otpLength = 6
+const otpCharset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+
+func generateOTP() (string, error) {
+	rand.Seed(time.Now().UnixNano())
+    otp := make([]byte, otpLength)
+    for i := range otp {
+        otp[i] = otpCharset[rand.Intn(len(otpCharset))]
+    }
+    return string(otp), nil
+}
+
+func ResetPassword(c *gin.Context) {
+    var req ResetPasswordRequest
+    if err := c.BindJSON(&req); err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
+        return
+    }
+
+    otpDetails, exists := otps[req.Email]
+    if !exists || otpDetails.OTP != req.OTP || time.Since(otpDetails.CreatedAt) > otpExpirationDuration {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid or expired OTP"})
+        return
+    }
+
+    // Remove OTP after use
+    delete(otps, req.Email)
+
+    // Update the user's password in the database
+    // Implement the password update logic here
+	passwordcrypt := HashPassword(req.NewPassword)
+    err := dbmaster.UpdatePassword(Client,req.Email, passwordcrypt)
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update password"})
+        return
+    }
+
+    c.JSON(http.StatusOK, gin.H{"message": "Password updated successfully"})
+}
+
+
+func sendEmail(to, subject, body string) error {
+	// Sender email address and authentication details
+    from := config.GetEnvbyKey("RPEMAIL")
+    password := config.GetEnvbyKey("RPPASS")
+
+    // SMTP server configuration
+    smtpHost := "smtp.gmail.com"
+    smtpPort := "587"
+	// Create the email message
+    msg := []byte(fmt.Sprintf("To: %s\r\nSubject: %s\r\n\r\n%s", to, subject, body))
+
+    // Authentication
+    auth := smtp.PlainAuth("", from, password, smtpHost)
+
+    // Send the email
+    err := smtp.SendMail(fmt.Sprintf("%s:%s", smtpHost, smtpPort), auth, from, []string{to}, msg)
+    if err != nil {
+        return fmt.Errorf("failed to send email: %w", err)
+    }
+
+    log.Printf("Sending OTP To user")
+	log.Printf("%s",body)
+    return nil
+}
 
 func SetupUserController(mongoclient *mongo.Client, obsclient *minio.Client) {
 	Client = mongoclient
@@ -60,6 +138,40 @@ func CreateNewUserController(c *gin.Context) {
 	} else {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "Request is not in proper format"})
 	}
+}
+
+func GenerateOTPController(c *gin.Context){
+	type otprequest struct{
+		Email string `bson:"email"`
+	}
+	var requestjson otprequest
+	err := c.Bind(&requestjson)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"status": err.Error()})
+		return
+	}
+	email := requestjson.Email
+	otp, err := generateOTP()
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate OTP"})
+        return
+    }
+
+	// Store OTP with creation time
+    otps[email] = OTPDetails{
+        OTP:       otp,
+        CreatedAt: time.Now(),
+    }
+	
+	// Send OTP to the user
+    err = sendEmail(requestjson.Email, "Your OTP Code", fmt.Sprintf("Your OTP code is: %s", otp))
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to send email"})
+        return
+    }
+
+    c.JSON(http.StatusOK, gin.H{"message": "OTP sent to email"})
+
 }
 
 func HashPassword(password string) string {
@@ -135,7 +247,6 @@ func Signup(c *gin.Context) {
 	// c.JSON(http.StatusOK, userappid)
 
 }
-
 
 
 func Login(c *gin.Context) {

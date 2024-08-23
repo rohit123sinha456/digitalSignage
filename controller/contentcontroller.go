@@ -76,6 +76,30 @@ func DeleteContentbyIDController(c *gin.Context) {
 	}
 }
 
+func UpdateContentbyIDController(c *gin.Context) {
+	var requestjsonvar DataModel.Content
+	userid := c.GetHeader("userid")
+	value, ifexists := c.Get("uid")
+	if ifexists == true {
+		log.Printf("%s", value)
+	} else {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "Invalid User Id In Token"})
+	}
+	contentID := c.Params.ByName("id")
+	reqerr := c.Bind(&requestjsonvar)
+	log.Printf("%+v", requestjsonvar)
+	if reqerr != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"status": reqerr.Error()})
+		return
+	}
+	err := dbmaster.UpdateContent(c, Client, userid, contentID, requestjsonvar)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"status": err.Error()})
+	} else {
+		c.JSON(http.StatusOK, gin.H{"status": "Updated"})
+	}
+}
+
 func UploadContentController(c *gin.Context) {
 	userid := c.GetHeader("userid")
 	value, ifexists := c.Get("uid")

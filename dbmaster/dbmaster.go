@@ -173,6 +173,17 @@ func TransactionCreateUser(ctx context.Context, client *mongo.Client, objectStor
 
 }
 
+func UpdatePassword(client *mongo.Client, userEmail string, password string) error {
+	coll := client.Database("user").Collection("userData")
+	filter := bson.D{{"email", userEmail}}
+	update := bson.D{{"$set", bson.D{{"password",password}}}}
+	result, err := coll.UpdateOne(context.TODO(), filter, update)
+	if err != nil {
+		return err
+	}
+	log.Printf("Documents updated: %v\n", result.ModifiedCount)
+	return nil
+}
 
 
 

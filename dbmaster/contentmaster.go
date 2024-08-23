@@ -111,6 +111,42 @@ func DeleteContent(ctx context.Context, client *mongo.Client, userID string, con
 	return nil
 }
 
+func UpdateContent(ctx context.Context, client *mongo.Client, userID string, contentID string, updateRequest DataModel.Content) error {
+	userSystemname := common.ExtractUserSystemIdentifier(userID)
+	coll := client.Database(userSystemname).Collection("content")
+	objectId, err := primitive.ObjectIDFromHex(contentID)
+	if err != nil {
+		return err
+	}
+	filter := bson.D{{"_id", objectId}}
+	 // Build the update document
+	 updateFields := bson.D{}
+	 if updateRequest.CName != "" {
+		 updateFields = append(updateFields, bson.E{"cname", updateRequest.CName})
+	 }
+	 if updateRequest.DType != "" {
+		 updateFields = append(updateFields, bson.E{"dtype", updateRequest.DType})
+	 }
+	 if updateRequest.Link != "" {
+		 updateFields = append(updateFields, bson.E{"link", updateRequest.Link})
+	 }
+	 if updateRequest.CreatedAt != nil {
+		 updateFields = append(updateFields, bson.E{"createdAt", updateRequest.CreatedAt})
+	 }
+
+	 if len(updateFields) == 0 {
+		 return nil
+	 }
+	
+	update := bson.D{{"$set", updateFields}}
+	result, err := coll.UpdateOne(ctx, filter, update)
+	if err != nil {
+		return err
+	}
+	log.Printf("Documents updated: %v\n", result.ModifiedCount)
+	return nil
+}
+
 func UploadContent(ctx context.Context, objectStoreClient *minio.Client, userID string,filedata *multipart.FileHeader) (string,error) {
 	userBucketname := common.CreateBucketName(userID)
 	log.Printf("Uploading Content")
@@ -125,7 +161,5 @@ func UploadContent(ctx context.Context, objectStoreClient *minio.Client, userID 
 	log.Printf("Successfull Content Uploaded contentmaster")
 	return objecturl,nil
 }
-
-
 
 // func UpdateContent() {}

@@ -74,7 +74,7 @@ func GetScreenbyIDController(c *gin.Context) {
 }
 
 func UpdateScreenbyIDController(c *gin.Context) {
-	var requestjsonvar []DataModel.ScreenBlock
+	var requestjsonvar DataModel.Screen
 	userid := c.GetHeader("userid")
 	value, ifexists := c.Get("uid")
 	if ifexists == true {
@@ -87,6 +87,7 @@ func UpdateScreenbyIDController(c *gin.Context) {
 	log.Printf("%+v", requestjsonvar)
 	if reqerr != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"status": reqerr.Error()})
+		return
 	}
 	err := dbmaster.UpdateScreen(c, Client, userid, screenID, requestjsonvar)
 	if err != nil {
@@ -95,6 +96,25 @@ func UpdateScreenbyIDController(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "Updated"})
 	}
 }
+
+func PublicUpdateScreenbyIDController(c *gin.Context) {
+	var requestjsonvar DataModel.Screen
+	screenID := c.Params.ByName("id")
+	userid := c.Params.ByName("userid")
+	reqerr := c.Bind(&requestjsonvar)
+	log.Printf("%+v", requestjsonvar)
+	if reqerr != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"status": reqerr.Error()})
+		return
+	}
+	err := dbmaster.UpdateScreen(c, Client, userid, screenID, requestjsonvar)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"status": err.Error()})
+	} else {
+		c.JSON(http.StatusOK, gin.H{"status": "Updated"})
+	}
+}
+
 
 func DeleteScreenbyIDController(c *gin.Context) {
 	userid := c.GetHeader("userid")

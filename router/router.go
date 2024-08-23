@@ -38,6 +38,8 @@ func UserRouter() { //Done
 	// R.POST("/user", controller.CreateNewUserController)
 	public.POST("users/signup", controller.Signup) // This will go to Admin Section
 	public.POST("users/login", controller.Login)
+	public.POST("users/getotp", controller.GenerateOTPController)
+	public.POST("users/resetpassword", controller.ResetPassword)
 	private.POST("users/logout", controller.Logout)
 
 }
@@ -64,6 +66,7 @@ func ContentRouter() { // Done
 	private.POST("/content", controller.CreateContentController)     // create Content
 	private.GET("/content", controller.ReadContentController)        // Read (all)
 	public.GET("/content/:userid/:id", controller.GetContentbyIDController) // Read (Specific) using public url
+	private.POST("/content/:id", controller.UpdateContentbyIDController) // working
 	private.DELETE("/content/:id", controller.DeleteContentbyIDController) // Delete Content as well delete from playlist
 	private.POST("/uploadcontent", controller.UploadContentController) // Delete Content as well delete from playlist
 
@@ -82,7 +85,8 @@ func ScreenRouter() { //Done
 	private.POST("/screen", controller.CreateScreenController)
 	private.GET("/screen", controller.ReadScreenController)
 	private.GET("/screen/:id", controller.GetScreenbyIDController)
-	private.POST("/screen/:id", controller.UpdateScreenbyIDController) // Not working
+	private.POST("/screen/:id", controller.UpdateScreenbyIDController) // working
+	public.POST("/screen/:userid/:id", controller.PublicUpdateScreenbyIDController) // working
 	private.DELETE("/screen/:id", controller.DeleteScreenbyIDController) // Delete Screen as well delete from playlist
 	
 

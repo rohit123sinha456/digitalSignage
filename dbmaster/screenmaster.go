@@ -11,7 +11,7 @@ import (
 	DataModel "github.com/rohit123sinha456/digitalSignage/model"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
+	// "go.mongodb.org/mongo-driver/mongo/options"
 
 )
 type  ActivatePlaylistofScreen struct{
@@ -78,7 +78,7 @@ func ReadScreen(ctx context.Context, client *mongo.Client, userID string) ([]Dat
 
 func ReadOneScreen(ctx context.Context, client *mongo.Client, userID string, screenID string) (DataModel.Screen, error) {
 	var result DataModel.Screen
-	var activateplaylistofscreen []ActivatePlaylistofScreen
+	// var activateplaylistofscreen []ActivatePlaylistofScreen
 	userSystemname := common.ExtractUserSystemIdentifier(userID)
 	coll := client.Database(userSystemname).Collection("screen")
 	objectId, err := primitive.ObjectIDFromHex(screenID)
@@ -91,49 +91,135 @@ func ReadOneScreen(ctx context.Context, client *mongo.Client, userID string, scr
 		return result, err
 	}
 	//db.playlist.find({$and:[{isplaying:true},{deviceblock:{$elemMatch:{deviceid:ObjectId('6692d6b83a2f6303d4a3a330')}}}]},{_id:1,playlistname:1})
-	currentplaylistfilter := bson.D{
-		{"$and", bson.A{
-			bson.D{{"isplaying", true}},
-			bson.D{{"deviceblock", bson.D{{"$elemMatch", bson.D{{"deviceid", objectId}}}}}},
-		}},
-	}
+	// currentplaylistfilter := bson.D{
+	// 	{"$and", bson.A{
+	// 		bson.D{{"isplaying", true}},
+	// 		bson.D{{"deviceblock", bson.D{{"$elemMatch", bson.D{{"deviceid", objectId}}}}}},
+	// 	}},
+	// }
 
-	currentplaylistprojection := bson.D{
-		{"_id", 1},
-		{"playlistname", 1},
-	}
+	// currentplaylistprojection := bson.D{
+	// 	{"_id", 1},
+	// 	{"playlistname", 1},
+	// }
 
-	opts := options.Find().SetProjection(currentplaylistprojection)
-	playlistcoll := client.Database(userSystemname).Collection("playlist")
-	cursor, err := playlistcoll.Find(context.TODO(), currentplaylistfilter, opts)
-	if err != nil {
-		panic(err)
-	}
-	if err = cursor.All(context.TODO(), &activateplaylistofscreen); err != nil {
-		panic(err)
-	}
-	log.Printf("Feting User details")
-	log.Printf("%v",activateplaylistofscreen)
-	result.CurrentPlaylistName = activateplaylistofscreen[0].CurrentPlaylistName
-	result.CurrentPlaylistID = activateplaylistofscreen[0].CurrentPlaylistID
+	// opts := options.Find().SetProjection(currentplaylistprojection)
+	// playlistcoll := client.Database(userSystemname).Collection("playlist")
+	// cursor, err := playlistcoll.Find(context.TODO(), currentplaylistfilter, opts)
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// if err = cursor.All(context.TODO(), &activateplaylistofscreen); err != nil {
+	// 	panic(err)
+	// }
+	// log.Printf("Feting User details")
+	// log.Printf("%v",activateplaylistofscreen)
+	// result.CurrentPlaylistName = activateplaylistofscreen[0].CurrentPlaylistName
+	// result.CurrentPlaylistID = activateplaylistofscreen[0].CurrentPlaylistID
 	return result, nil
 }
 
-func UpdateScreen(ctx context.Context, client *mongo.Client, userID string, screenID string, screenblock []DataModel.ScreenBlock) error {
+func UpdateScreen(ctx context.Context, client *mongo.Client, userID string, screenID string, updateRequest DataModel.Screen) error {
 	userSystemname := common.ExtractUserSystemIdentifier(userID)
 	coll := client.Database(userSystemname).Collection("screen")
-	userdBname := common.ExtractUserSystemIdentifier(userID)
-	contentListCollection := client.Database(userdBname).Collection("contentlist")
-	err := checkifcontentlistexists(ctx, contentListCollection, screenblock)
-	if err != nil {
-		return err
-	}
 	objectId, err := primitive.ObjectIDFromHex(screenID)
 	if err != nil {
 		return err
 	}
 	filter := bson.D{{"_id", objectId}}
-	update := bson.D{{"$set", bson.D{{"screenblock", screenblock}}}}
+	// Build the update document
+	updateFields := bson.D{}
+	if updateRequest.Name != "" {
+		updateFields = append(updateFields, bson.E{"name", updateRequest.Name})
+	}
+	if updateRequest.Location != "" {
+		updateFields = append(updateFields, bson.E{"location", updateRequest.Location})
+	}
+	if updateRequest.CurrentPlaylistName != "" {
+		updateFields = append(updateFields, bson.E{"currentplaylistname", updateRequest.CurrentPlaylistName})
+	}
+	if updateRequest.CurrentPlaylistID != primitive.NilObjectID  {
+		updateFields = append(updateFields, bson.E{"currentplaylistid", updateRequest.CurrentPlaylistID})
+	}
+	if updateRequest.CreatedAt != nil {
+		updateFields = append(updateFields, bson.E{"createdAt", updateRequest.CreatedAt})
+	}
+	if updateRequest.UpdatedAt != nil {
+		updateFields = append(updateFields, bson.E{"updatedAt", updateRequest.UpdatedAt})
+	}
+	if updateRequest.Status {
+		updateFields = append(updateFields, bson.E{"status", updateRequest.Status})
+	}
+	if updateRequest.Orientation != 0 {
+		updateFields = append(updateFields, bson.E{"orientation", updateRequest.Orientation})
+	}
+	if updateRequest.StorageTotal != 0 {
+		updateFields = append(updateFields, bson.E{"storagetotal", updateRequest.StorageTotal})
+	}
+	if updateRequest.StorageFree != 0 {
+		updateFields = append(updateFields, bson.E{"storagefree", updateRequest.StorageFree})
+	}
+	if updateRequest.StorageUsed != 0 {
+		updateFields = append(updateFields, bson.E{"storageused", updateRequest.StorageUsed})
+	}
+	if updateRequest.MemoryTotal != 0 {
+		updateFields = append(updateFields, bson.E{"memorytotal", updateRequest.MemoryTotal})
+	}
+	if updateRequest.MemoryUsed != 0 {
+		updateFields = append(updateFields, bson.E{"memoryused", updateRequest.MemoryUsed})
+	}
+	if updateRequest.IPAddr != "" {
+		updateFields = append(updateFields, bson.E{"ip", updateRequest.IPAddr})
+	}
+	if updateRequest.DeviceModel != "" {
+		updateFields = append(updateFields, bson.E{"devicemodel", updateRequest.DeviceModel})
+	}
+	if updateRequest.CanDrawOverlay {
+		updateFields = append(updateFields, bson.E{"candrawoverlay", updateRequest.CanDrawOverlay})
+	}
+	if updateRequest.AppShellVersion != "" {
+		updateFields = append(updateFields, bson.E{"appshellversion", updateRequest.AppShellVersion})
+	}
+	if updateRequest.ScreenshotSupport {
+		updateFields = append(updateFields, bson.E{"screenshotsupport", updateRequest.ScreenshotSupport})
+	}
+	if updateRequest.ScreenResolution != "" {
+		updateFields = append(updateFields, bson.E{"screenresolution", updateRequest.ScreenResolution})
+	}
+	if updateRequest.BrowserResolution != "" {
+		updateFields = append(updateFields, bson.E{"browserresolution", updateRequest.BrowserResolution})
+	}
+	if updateRequest.EngerySavedEnabled {
+		updateFields = append(updateFields, bson.E{"energysaver", updateRequest.EngerySavedEnabled})
+	}
+	if updateRequest.Country != "" {
+		updateFields = append(updateFields, bson.E{"country", updateRequest.Country})
+	}
+	if updateRequest.UserAgent != "" {
+		updateFields = append(updateFields, bson.E{"useragent", updateRequest.UserAgent})
+	}
+	if updateRequest.GPlaySupport {
+		updateFields = append(updateFields, bson.E{"gplaysupport", updateRequest.GPlaySupport})
+	}
+	if updateRequest.VideoCodecs != "" {
+		updateFields = append(updateFields, bson.E{"videocodecs", updateRequest.VideoCodecs})
+	}
+	if updateRequest.PlayerTimezone != "" {
+		updateFields = append(updateFields, bson.E{"playertimsezone", updateRequest.PlayerTimezone})
+	}
+	if updateRequest.OS != "" {
+		updateFields = append(updateFields, bson.E{"os", updateRequest.OS})
+	}
+	if updateRequest.DevicePixelRatio != "" {
+		updateFields = append(updateFields, bson.E{"devicepixelratio", updateRequest.DevicePixelRatio})
+	}
+	if updateRequest.PlayerCodec != "" {
+		updateFields = append(updateFields, bson.E{"playercodec", updateRequest.PlayerCodec})
+	}
+	if updateRequest.RicoviAppVersion != "" {
+		updateFields = append(updateFields, bson.E{"appversion", updateRequest.RicoviAppVersion})
+	}
+	update := bson.D{{"$set", updateFields}}
 
 	// Updates the first document that has the specified "_id" value
 	result, err := coll.UpdateOne(ctx, filter, update)
