@@ -222,8 +222,11 @@ func UpdateScreen(ctx context.Context, client *mongo.Client, userID string, scre
 	}
 	update := bson.D{{"$set", updateFields}}
 
+	upsert := true
+    updateOptions := options.Update().SetUpsert(upsert)
+
 	// Updates the first document that has the specified "_id" value
-	result, err := coll.UpdateOne(ctx, filter, update)
+	result, err := coll.UpdateOne(ctx, filter, update,updateOptions)
 	if err != nil {
 		return err
 	}

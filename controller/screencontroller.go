@@ -100,7 +100,11 @@ func UpdateScreenbyIDController(c *gin.Context) {
 func PublicUpdateScreenbyIDController(c *gin.Context) {
 	var requestjsonvar DataModel.Screen
 	screenID := c.Params.ByName("id")
-	userid := c.Params.ByName("userid")
+	userid := c.GetHeader("userid")
+	if userid  == "" {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "No UserID Header Provided"})
+	}
+	
 	reqerr := c.Bind(&requestjsonvar)
 	log.Printf("%+v", requestjsonvar)
 	if reqerr != nil {

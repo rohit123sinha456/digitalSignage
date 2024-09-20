@@ -96,7 +96,7 @@ func ScreenRouter() { //Done
 	private.GET("/screen/getplaylists/:id", controller.GetAllPlaylistsforScreenController)
 	public.POST("/screen/getplaylists", controller.GetPlaylistofScreenController) // APP -  return the detail of a playlist of a screen
 	private.POST("/screen/:id", controller.UpdateScreenbyIDController) // working
-	public.POST("/screen/:userid/:id", controller.PublicUpdateScreenbyIDController) // working
+	public.POST("/screen/:id", controller.PublicUpdateScreenbyIDController) // working
 	private.DELETE("/screen/:id", controller.DeleteScreenbyIDController) // Delete Screen as well delete from playlist
 
 	private.POST("/event-stream/:id", func(c *gin.Context) {

@@ -116,12 +116,7 @@ func GetPlaylistofScreenController(c *gin.Context) {
 	if Userid == "" {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "No UserID Header Provided"})
 	}
-	value, ifexists := c.Get("uid")
-	if ifexists == true {
-		log.Printf("%s", value)
-	} else {
-		c.JSON(http.StatusBadRequest, gin.H{"status": "Invalid User Id In Token"})
-	}
+
 	reqerr := c.Bind(&requestjsonvar)
 	log.Printf("%+v", requestjsonvar)
 	if reqerr != nil {
@@ -180,12 +175,7 @@ func GetPlaylistbyIDController(c *gin.Context) {
 	if userid  == "" {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "No UserID Header Provided"})
 	}
-	value, ifexists := c.Get("uid")
-	if ifexists == true {
-		log.Printf("%s", value)
-	} else {
-		c.JSON(http.StatusBadRequest, gin.H{"status": "Invalid User Id In Token"})
-	}
+
 	playlistId := c.Params.ByName("id")
 	user, err := dbmaster.GetPlaylist(c, Client, userid, playlistId)
 	if err != nil {
