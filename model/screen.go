@@ -9,6 +9,11 @@ type ScreenBlock struct {
 	ContentListID primitive.ObjectID `bson:"contentlistid,omitempty"`
 }
 
+type PlaylistsofScreen struct {
+	PlaylistName     string             `bson:"playlistname,omitempty"`
+	PlaylistID primitive.ObjectID `bson:"_id,omitempty"`
+}
+
 type Screen struct {
 	ID       primitive.ObjectID `bson:"_id"`
 	Name     string             `bson:"name,omitempty"`

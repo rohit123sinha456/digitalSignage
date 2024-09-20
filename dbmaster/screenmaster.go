@@ -9,9 +9,10 @@ import (
 
 	"github.com/rohit123sinha456/digitalSignage/common"
 	DataModel "github.com/rohit123sinha456/digitalSignage/model"
+	"github.com/rohit123sinha456/digitalSignage/rabbitqueue"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
-	// "go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/mongo/options"
 
 )
 type  ActivatePlaylistofScreen struct{
@@ -231,6 +232,7 @@ func UpdateScreen(ctx context.Context, client *mongo.Client, userID string, scre
 }
 
 func DeleteScreen(ctx context.Context, client *mongo.Client, userID string, screenID string) error {
+	uservHostname := common.CreatevHostName(userID)
 	userSystemname := common.ExtractUserSystemIdentifier(userID)
 	screenCollection := client.Database(userSystemname).Collection("screen")
 	userdBname := common.ExtractUserSystemIdentifier(userID)
@@ -267,6 +269,55 @@ func DeleteScreen(ctx context.Context, client *mongo.Client, userID string, scre
     if err != nil {
         return err
     }
+	// Send a message to rabbitmq
+	signal := DataModel.Signal{
+		SignalType : "unpair",
+		ScreenID : screenID,
+	}
+	rabbitqueue.Connect(userSystemname, "password", uservHostname)
+	err = rabbitqueue.PublishSignal(ctx,signal, uservHostname)
+	if err != nil {
+		return err
+	}
+
 	log.Printf("Number of Screens deleted from Plalist: %d\n", playlistdeleteresult.ModifiedCount)
 	return nil
+}
+
+func GetAllPlaylistforSingleScreen(ctx context.Context, client *mongo.Client, userID string, screenID string) ([]DataModel.PlaylistsofScreen,error) {
+	//db.playlist.find({"deviceblock.deviceid": ObjectId("6692d6b83a2f6303d4a3a330") },{ "_id": 1,"playlistname":1 });
+	var playlists []DataModel.PlaylistsofScreen
+	userSystemname := common.ExtractUserSystemIdentifier(userID)
+	coll := client.Database(userSystemname).Collection("playlist")
+	deviceID, err := primitive.ObjectIDFromHex(screenID)
+	if err != nil {
+		return nil, err
+	}
+	
+	// Define the filter and projection
+    filter := bson.M{
+        "deviceblock.deviceid": deviceID,
+    }
+    projection := bson.M{
+        "_id":          1,
+        "playlistname": 1,
+    }
+
+    // Perform the query
+    cur, err := coll.Find(ctx, filter, options.Find().SetProjection(projection))
+    if err != nil {
+        return nil, err
+    }
+
+    // Iterate over the cursor and print results
+    for cur.Next(ctx) {
+        var result DataModel.PlaylistsofScreen
+        if derr := cur.Decode(&result); err != nil {
+            return nil, derr
+        }
+		log.Printf("%v",result)
+        playlists = append(playlists, result)
+    }
+    defer cur.Close(ctx)
+	return playlists, nil
 }

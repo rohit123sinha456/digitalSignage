@@ -6,3 +6,9 @@ type EventStreamRequest struct {
 	Userinfo   UserSystemIdentifeir `bson:"userinfo"`
 	ScreenMongoID string `bson:"screenmongoid"`
 }
+
+type ScreenControlRequest struct {
+	SignalType string               `bson:"signaltype"`
+	Signal   UserSystemIdentifeir `bson:"signal"`
+	ScreenMongoID string `bson:"screenmongoid"`
+}

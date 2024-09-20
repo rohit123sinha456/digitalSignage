@@ -133,6 +133,22 @@ func DeleteScreenbyIDController(c *gin.Context) {
 	}
 }
 
+func GetAllPlaylistsforScreenController(c *gin.Context){
+	userid := c.GetHeader("userid")
+	value, ifexists := c.Get("uid")
+	if ifexists == true {
+		log.Printf("%s", value)
+	} else {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "Invalid User Id In Token"})
+	}
+	screenID := c.Params.ByName("id")
+	playlists,err := dbmaster.GetAllPlaylistforSingleScreen(c, Client, userid, screenID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"status": err.Error()})
+	} else {
+		c.JSON(http.StatusOK, gin.H{"content": playlists})
+	}
+}
 
 func HandleEventStreamPost(c *gin.Context, ch chan DataModel.EventStreamRequest, screencode string) {
 	var result DataModel.EventStreamRequest

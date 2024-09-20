@@ -51,3 +51,25 @@ func PublishMessage(ctx context.Context, message DataModel.Playlist, vhostname s
 	}
 	return nil
 }
+
+
+func PublishSignal(ctx context.Context, message DataModel.Signal, vhostname string) error {
+	body, err := json.Marshal(message)
+	if err != nil {
+		return err
+	}
+	erro := ch.PublishWithContext(
+		ctx,
+		"PLExchange", // exchange
+		"",           // routing key
+		false,        // mandatory
+		false,        // immediate
+		amqp.Publishing{
+			ContentType: "text/plain",
+			Body:        body,
+		})
+	if erro != nil {
+		return err
+	}
+	return nil
+}

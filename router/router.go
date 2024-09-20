@@ -52,10 +52,17 @@ func AuthRoutes() {
 func PlaylistRouter() { // Done
 	private.POST("/playplaylist", controller.PlayPlaylistController)		// PLay PLaylist to all registered screen
 	private.POST("/playplaylisttoscreen", controller.PlayPlaylisttoScreenController) // PLay PLaylist to single registered screen
+	
+	private.POST("/v2/playplaylist", controller.PlayPlaylistControllerV2)		// PLay PLaylist to all registered screen
+	private.POST("/v2/playplaylisttoscreen", controller.PlayPlaylisttoScreenControllerV2) // PLay PLaylist to single registered screen
+	
 	private.POST("/playlist", controller.CreatePlaylist)                   // Create Playlist
 	private.GET("/playlist", controller.ReadPlaylistController)            // Read (all)
 	private.GET("/playlist/:id", controller.GetPlaylistbyIDController)     // Read (Specific)
+	public.GET("/playlist/:id", controller.GetPlaylistbyIDController)     // APP - Read (Specific)
 	private.POST("/playlist/:id", controller.UpdatePlaylistbyIDController) // Update (Specific)
+	private.POST("/playlist/addscreen", controller.AddScreenToPlaylistController) // Add Scrren to Plalist (Specific)
+
 	private.POST("/playlist/duplicate/:id", controller.DuplicatePlaylistbyIDController) // Duplicate (Specific ID)
 	private.DELETE("/playlist/:id", controller.DeletePlaylistbyIDController) // Delete (Specific)
 	
@@ -65,7 +72,7 @@ func PlaylistRouter() { // Done
 func ContentRouter() { // Done
 	private.POST("/content", controller.CreateContentController)     // create Content
 	private.GET("/content", controller.ReadContentController)        // Read (all)
-	public.GET("/content/:userid/:id", controller.GetContentbyIDController) // Read (Specific) using public url
+	public.GET("/content/:userid/:id", controller.GetContentbyIDController) // APP - Read (Specific) using public url
 	private.POST("/content/:id", controller.UpdateContentbyIDController) // working
 	private.DELETE("/content/:id", controller.DeleteContentbyIDController) // Delete Content as well delete from playlist
 	private.POST("/uploadcontent", controller.UploadContentController) // Upload single
@@ -86,10 +93,11 @@ func ScreenRouter() { //Done
 	private.POST("/screen", controller.CreateScreenController)
 	private.GET("/screen", controller.ReadScreenController)
 	private.GET("/screen/:id", controller.GetScreenbyIDController)
+	private.GET("/screen/getplaylists/:id", controller.GetAllPlaylistsforScreenController)
+	public.POST("/screen/getplaylists", controller.GetPlaylistofScreenController) // APP -  return the detail of a playlist of a screen
 	private.POST("/screen/:id", controller.UpdateScreenbyIDController) // working
 	public.POST("/screen/:userid/:id", controller.PublicUpdateScreenbyIDController) // working
 	private.DELETE("/screen/:id", controller.DeleteScreenbyIDController) // Delete Screen as well delete from playlist
-	
 
 	private.POST("/event-stream/:id", func(c *gin.Context) {
 		screencode := c.Params.ByName("id")
